@@ -81,10 +81,10 @@ class Heuristic_Policy:
                 revenue_list.append(revenue_k)
             return revenue_list
 
-        obs=(obs*DEMAND_MAX)[0]
+        # obs=(obs*DEMAND_MAX)[0]
         inv = obs[0]
         demand = obs[1]
-        orders = obs[3:]
+        orders = obs[3:7]
 
         inv_pred=max(inv+orders[0]-demand,0)
         inv_pred=max(inv_pred+orders[1]-demand,0)
