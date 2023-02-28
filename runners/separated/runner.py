@@ -382,7 +382,7 @@ class CRunner(Runner):
                 temp_actions_env = []
                 eval_values=[]
                 for agent_id in range(self.num_agents):
-                    self.trainer[agent_id].policy.hist_demand=self.eval_envs.get_hist_demand()
+                    self.trainer[agent_id].policy.hist_demand=self.eval_envs.get_hist_demand()[0][agent_id]
                     self.trainer[agent_id].prep_rollout()
                     eval_value,eval_actions,_,temp_rnn_state,temp_rnn_state_critic\
                         =self.trainer[agent_id].policy.get_actions(eval_share_obs_critic,
