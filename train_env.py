@@ -26,7 +26,7 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     if all_args.yaml_path:
         with open(all_args.yaml_path,'r') as f:
-            yml = yaml.load(f)
+            yml = yaml.load(f,Loader=yaml.FullLoader)
         parser.set_defaults(**yml)
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
