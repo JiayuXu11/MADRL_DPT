@@ -1,0 +1,57 @@
+# 名字
+algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
+experiment_name: 'continue_beta'
+
+# 大体设置
+model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
+n_rollout_threads: 50
+num_env_steps: 300000000
+num_agents: 3
+eval_interval: 20
+n_no_improvement_thres: 10
+gamma: 0.90
+
+# 离散还是连续
+discrete: False
+
+# 仅当discrete=False 时使用
+std_y_coef: [5.0,2.5]
+std_x_coef: 1.0
+bata: True
+
+# 学习率
+use_linear_lr_decay: False
+lr: 1e-6
+critic_lr: 1e-3
+
+# 模型参数
+recurrent_N: 2
+layer_N: 2
+hidden_size: 64
+use_ReLU: False
+
+# ppo
+ppo_epoch: 10
+use_proper_time_limits: False
+use_gae: True
+gae_lambda: 0.95
+use_clipped_value_loss: False
+clip_param: 0.3
+entropy_coef: 0.01
+critic_learning_pure_returns: False
+
+# normalization
+sample_mean_advantage: True
+use_valuenorm: True
+use_popart: False
+use_feature_normalization: False
+use_max_grad_norm: False
+max_grad_norm: 0.5
+
+# 环境相关
+alpha: 0.7
+ratio_transship: False
+instant_info_sharing: True
+central_controller: False
+
+
