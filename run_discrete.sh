@@ -1,4 +1,4 @@
-python train_env.py --yaml_path ""setting_yaml/discrete/discrete_no_info_sharing.yaml""
+python train_env.py --yaml_path "setting_yaml/discrete/discrete_no_info_sharing.yaml"
 # relu
 python train_env.py --yaml_path "setting_yaml/discrete/discrete_no_info_sharing.yaml" --experiment_name discrete_no_info_sharing_relu --use_ReLU True
 # adavantage scaling
