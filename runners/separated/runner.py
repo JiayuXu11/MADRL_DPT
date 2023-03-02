@@ -31,7 +31,7 @@ class CRunner(Runner):
             
             if episode % self.eval_interval == 0 and self.use_eval:
                 re, bw_res = self.eval()
-                self.writter.add_scalars('return', {str(self.all_args.std_y_coef):re}, episode)
+                self.writter.add_scalars('return', {str(self.all_args.entropy_coef):re}, episode)
                 print("Eval average reward: ", re, " Eval ordering fluctuation measurement (downstream to upstream): ", bw_res)
                 print("Best Eval average reward(before): ", best_reward)
                 # test_reward,_=self.eval(test_tf=True)
@@ -269,7 +269,7 @@ class CRunner(Runner):
 
             if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
                 for i in range(self.envs.action_space[agent_id].shape):
-                    uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
+                    uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i].cpu().detach()]
                     if i == 0:
                         action_env = uc_action_env
                     else:
@@ -371,7 +371,7 @@ class CRunner(Runner):
             eval_share_obs_critic = np.array(eval_share_obs_critic)
 
             eval_rnn_states = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
-            eval_rnn_states_critic = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
+            eval_rnn_states_critic = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
             eval_masks = np.ones((self.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
 
             rewards_log=[]
@@ -453,7 +453,7 @@ class CRunner(Runner):
                 eval_dones_env = np.all(eval_dones, axis=1)
 
                 eval_rnn_states[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
-                eval_rnn_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
+                eval_rnn_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
                 eval_masks = np.ones((self.all_args.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
                 eval_masks[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
                     

@@ -12,11 +12,15 @@ gamma: 0.95
 
 # continue or discrete
 discrete: True
+multi_discrete: False
 
-# only for continue
-std_y_coef: [10.0,5.]
+# fluctuation control
+entropy_decrease: True
+entropy_decrease_time: 5
+entropy_coef: 0.1
+std_y_coef: [10.0,10.0]  # only for continue
 std_x_coef: 1.0
-beta: False
+
 
 # lr
 use_linear_lr_decay: False
@@ -26,8 +30,10 @@ critic_lr: 1e-3
 # model setting
 recurrent_N: 2
 layer_N: 2
-hidden_size: 512
+hidden_size: 256
+hidden_size_critic: 64 # critic
 use_ReLU: False
+weight_decay: 5e-4
 
 # ppo
 ppo_epoch: 10
@@ -36,7 +42,6 @@ use_gae: True
 gae_lambda: 0.95
 use_clipped_value_loss: True
 clip_param: 0.2
-entropy_coef: 0.01
 critic_learning_pure_returns: False
 
 # normalization

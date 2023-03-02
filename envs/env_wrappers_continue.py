@@ -58,7 +58,9 @@ class SubprocVecEnv(object):
         """
         envs: list of gym environments to run in subprocesses
         """
-        if all_args.discrete:
+        if all_args.multi_discrete:
+            from envs.transship_multi_discrete import Env
+        elif all_args.discrete:
             from envs.transship_new_discrete import Env
         else:
             from envs.transship_new_continue import Env
@@ -77,6 +79,7 @@ class SubprocVecEnv(object):
         # environment parameters
         # self.discrete_action_space = True
         self.discrete_action_space = all_args.discrete
+        self.multi_discrete_action_space = all_args.multi_discrete
 
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
@@ -91,14 +94,17 @@ class SubprocVecEnv(object):
         share_obs_critic_dim=0
         for agent in range(self.num_agent):
             total_action_space = []
-
+            if self.multi_discrete_action_space:
+                for d in self.signal_action_dim:
+                    total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space
-            if self.discrete_action_space:
+            elif self.discrete_action_space:
                 u_action_space = spaces.Discrete(self.signal_action_dim)  # 5个离散的动作
+                total_action_space.append(u_action_space)
             else:
                 u_action_space = spaces.Box(low=-self.u_range, high=+self.u_range, shape=(self.signal_action_dim,), dtype=np.float32)  # [-1,1]
-            if self.movable:
                 total_action_space.append(u_action_space)
+                
 
             # total action space
             if len(total_action_space) > 1:
@@ -155,7 +161,9 @@ class DummyVecEnv(object):
         """
         envs: list of gym environments to run in subprocesses
         """
-        if all_args.discrete:
+        if all_args.multi_discrete:
+            from envs.transship_multi_discrete import Env
+        elif all_args.discrete:
             from envs.transship_new_discrete import Env
         else:
             from envs.transship_new_continue import Env
@@ -179,8 +187,8 @@ class DummyVecEnv(object):
         self.movable = True
 
         # environment parameters
-        self.discrete_action_space = False
-
+        self.discrete_action_space = all_args.discrete
+        self.multi_discrete_action_space = all_args.multi_discrete
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
         # if true, even the action is continuous, action will be performed discretely
@@ -193,17 +201,19 @@ class DummyVecEnv(object):
         self.share_observation_space = []
         share_obs_dim = 0
         share_obs_critic_dim = 0
-        for agent_num in range(self.num_agent):
+        for agent in range(self.num_agent):
             total_action_space = []
-
+            if self.multi_discrete_action_space:
+                for d in self.signal_action_dim:
+                    total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space
-            if self.discrete_action_space:
-                u_action_space = spaces.Discrete(self.signal_action_dim)
+            elif self.discrete_action_space:
+                u_action_space = spaces.Discrete(self.signal_action_dim)  # 5个离散的动作
+                total_action_space.append(u_action_space)
             else:
                 u_action_space = spaces.Box(low=-self.u_range, high=+self.u_range, shape=(self.signal_action_dim,), dtype=np.float32)  # [-1,1]
-            if self.movable:
                 total_action_space.append(u_action_space)
-
+                
             # total action space
             if len(total_action_space) > 1:
                 # all action spaces are discrete, so simplify to MultiDiscrete action space

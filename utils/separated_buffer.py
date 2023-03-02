@@ -13,7 +13,8 @@ class SeparatedReplayBuffer(object):
     def __init__(self, args, obs_space, share_obs_space, act_space):
         self.episode_length = args.episode_length
         self.n_rollout_threads = args.n_rollout_threads
-        self.rnn_hidden_size = args.hidden_size
+        self.hidden_size = args.hidden_size
+        self.hidden_size_critic =args.hidden_size_critic
         self.recurrent_N = args.recurrent_N
         self.gamma = args.gamma
         self.gae_lambda = args.gae_lambda
@@ -37,13 +38,13 @@ class SeparatedReplayBuffer(object):
         self.share_obs = np.zeros((self.episode_length + 1, self.n_rollout_threads, *share_obs_shape), dtype=np.float32)
         self.obs = np.zeros((self.episode_length + 1, self.n_rollout_threads, *obs_shape), dtype=np.float32)
 
-        self.rnn_states = np.zeros((self.episode_length + 1, self.n_rollout_threads, self.recurrent_N, self.rnn_hidden_size), dtype=np.float32)
-        self.rnn_states_critic = np.zeros_like(self.rnn_states)
+        self.rnn_states = np.zeros((self.episode_length + 1, self.n_rollout_threads, self.recurrent_N, self.hidden_size), dtype=np.float32)
+        self.rnn_states_critic = np.zeros((self.episode_length + 1, self.n_rollout_threads, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
 
         self.value_preds = np.zeros((self.episode_length + 1, self.n_rollout_threads, 1), dtype=np.float32)
         self.returns = np.zeros((self.episode_length + 1, self.n_rollout_threads, 1), dtype=np.float32)
         
-        if act_space.__class__.__name__ == 'Discrete':
+        if act_space.__class__.__name__ == 'Discrete' or act_space.__class__.__name__ == 'MultiDiscrete':
             self.available_actions = np.ones((self.episode_length + 1, self.n_rollout_threads, act_space.n), dtype=np.float32)
         else:
             # self.available_actions = None

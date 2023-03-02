@@ -291,9 +291,9 @@ class Env(object):
         transship_amounts=[]
         for i in range(len(action)):
             if one_hot:
-                order_amount=action[i]//(2*DEMAND_MAX+1)
+                order_amount=action[i]//(DEMAND_MAX+1)
                 order_amounts.append(order_amount)
-                transship_amount=max(action[i]%(2*DEMAND_MAX+1)-DEMAND_MAX,-self.inventory[i]-self.order[i][0])
+                transship_amount=max(action[i]%(DEMAND_MAX+1)-DEMAND_MAX/2,-self.inventory[i]-self.order[i][0])
                 transship_amounts.append(transship_amount)
                 self.transship_intend=transship_amounts.copy()
             else:

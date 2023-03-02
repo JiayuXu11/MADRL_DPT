@@ -1,0 +1,61 @@
+algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
+experiment_name: 'discrete_no_info_sharing_tanh'
+
+# basic setting
+model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
+n_rollout_threads: 100
+num_env_steps: 300000000
+num_agents: 3
+eval_interval: 20
+n_no_improvement_thres: 10
+gamma: 0.95
+
+# continue or discrete
+discrete: True
+multi_discrete: True
+
+# fluctuation control
+entropy_decrease: True
+entropy_decrease_time: 5
+entropy_coef: 0.1
+std_y_coef: [10.0,10.0]  # only for continue
+std_x_coef: 1.0
+
+
+# lr
+use_linear_lr_decay: False
+lr: 5e-4
+critic_lr: 1e-3
+
+# model setting
+recurrent_N: 2
+layer_N: 2
+hidden_size: 256
+hidden_size_critic: 64 # critic
+use_ReLU: False
+weight_decay: 5e-4
+
+# ppo
+ppo_epoch: 10
+use_proper_time_limits: False
+use_gae: True
+gae_lambda: 0.95
+use_clipped_value_loss: True
+clip_param: 0.2
+critic_learning_pure_returns: False
+
+# normalization
+sample_mean_advantage: True
+use_valuenorm: True
+use_popart: False
+use_feature_normalization: False
+use_max_grad_norm: False
+max_grad_norm: 0.5
+
+# env
+alpha: 0.7
+ratio_transship: False
+instant_info_sharing: False
+central_controller: False
+
+

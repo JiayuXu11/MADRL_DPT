@@ -14,7 +14,7 @@ class ACTLayer(nn.Module):
         super(ACTLayer, self).__init__()
         self.mixed_action = False
         self.multi_discrete = False
-        self.bound=(torch.tensor([0,0,0,-1000,-1000,-1000],device='cuda'),torch.tensor([1000,1000,1000,1000,1000,1000],device='cuda')) if args.central_controller else (torch.tensor([0,-1000],device='cuda'),torch.tensor([1000,1000],device='cuda'))
+        self.bound=(torch.tensor([0,0,0,-1000,-1000,-1000],device=args.device),torch.tensor([1000,1000,1000,1000,1000,1000],device=args.device)) if args.central_controller else (torch.tensor([0,-1000],device=args.device),torch.tensor([1000,1000],device=args.device))
         self.action_type = action_space.__class__.__name__
         if action_space.__class__.__name__ == "Discrete":
             action_dim = action_space.n

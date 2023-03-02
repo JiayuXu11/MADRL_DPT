@@ -50,6 +50,8 @@ if __name__ == "__main__":
         print("choose to use cpu...")
         device = torch.device("cpu")
         torch.set_num_threads(all_args.n_training_threads)
+    
+    all_args.device=device
 
     for seed in seeds:
         print("-------------------------------------------------Training starts for seed: " + str(seed)+ "---------------------------------------------------")
@@ -80,7 +82,7 @@ if __name__ == "__main__":
         # all_args.std_y_coef=[j/2**4 for j in all_args.std_y_coef]
         # all_args.lr=all_args.lr/2**4
         all_args.clip_bound=[(1-all_args.clip_param),(1+all_args.clip_param)]
-        for i in range(4):
+        for i in range(all_args.entropy_decrease_time):
             # env
             envs = make_train_env(all_args)
             eval_envs = make_eval_env(all_args) if all_args.use_eval else None
@@ -103,12 +105,14 @@ if __name__ == "__main__":
             with open(seed_res_record_file, 'a+') as f:
                 f.write(str(all_args.std_y_coef)+'   '+str(seed) + ' ' + str(eval_reward) + ' ' + str(test_reward))
                 f.write('\n')
-            if all_args.discrete or all_args.beta:
+            if not all_args.entropy_decrease:
                 break
-            all_args.std_y_coef=[j/2. for j in all_args.std_y_coef]
-            all_args.lr=all_args.lr/2
+            if not all_args.discrete and not all_args.multi_discrete:
+                all_args.std_y_coef=[j/2. for j in all_args.std_y_coef]
+                all_args.lr=all_args.lr/2
+            all_args.entropy_coef=all_args.entropy_coef/2
             all_args.model_dir = str(config['run_dir'] / 'models')
-            all_args.clip_bound=[x**1.2 for x in all_args.clip_bound]
+            # all_args.clip_bound=[x**1.2 for x in all_args.clip_bound]
 
         # post process
         envs.close()

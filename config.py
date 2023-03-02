@@ -80,7 +80,9 @@ def get_config():
     parser.add_argument("--use_stacked_frames", type=t_or_f,
                         default=False, help="Whether to use stacked_frames")
     parser.add_argument("--hidden_size", type=int, 
-                        default=32, help="Dimension of hidden layers for actor/critic networks") 
+                        default=32, help="Dimension of hidden layers for actor networks") 
+    parser.add_argument("--hidden_size_critic", type=int, 
+                        default=32, help="Dimension of hidden layers for critic networks") 
     parser.add_argument("--layer_N", type=int, 
                         default=2, help="Number of layers for actor/critic networks")
     parser.add_argument("--use_ReLU", type=t_or_f,
@@ -209,10 +211,10 @@ def get_config():
     parser.add_argument("--central_controller", type=t_or_f, 
                         default=False, help="是否全部采用中央控制")
 
-    # parser.add_argument("--yaml_path", type=str, 
-    #                     default='setting_yaml\discrete\discrete_no_info_sharing.yaml', help="yaml的路径")
     parser.add_argument("--yaml_path", type=str, 
-                        default=None, help="yaml的路径")
+                        default='setting_yaml\discrete\discrete_no_info_sharing.yaml', help="yaml的路径")
+   #  parser.add_argument("--yaml_path", type=str, 
+   #                      default=None, help="yaml的路径")
     
     parser.add_argument("--sample_mean_advantage", type=t_or_f, 
                         default=True, help="是否对advantage采用sample_mean_advantage")
@@ -231,9 +233,16 @@ def get_config():
     
     parser.add_argument("--discrete", type=t_or_f, 
                         default=True, help="是否discrete")
+    parser.add_argument("--multi_discrete", type=t_or_f, 
+                        default=True, help="是否multi_discrete")
     parser.add_argument("--beta", type=t_or_f, 
-                        default=True, help="连续情况是否采用beta分布")
+                        default=False, help="连续情况是否采用beta分布")
     
     parser.add_argument("--norm_input", type=t_or_f, 
-                        default=True, help="是否将输入先映射到-1，1")
+                        default=True, help="是否将输入先映射到-1,1")
+    
+    parser.add_argument("--entropy_decrease", type=t_or_f, 
+                        default=True, help="是否递进减少entropy需求")
+    parser.add_argument("--entropy_decrease_time", type=int, 
+                        default=5, help="递进减少entropy多少次")
     return parser
