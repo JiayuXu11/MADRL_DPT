@@ -3,7 +3,7 @@ import gym
 from gym import spaces
 # from envs.newsvendor_continue import Env
 # from envs.newsvendor import Env
-# from envs.transship_new_continue import Env
+from envs.transship_new_all import Env
 # from envs.serial import Env
 #from envs.net_2x3 import Env
 
@@ -58,29 +58,20 @@ class SubprocVecEnv(object):
         """
         envs: list of gym environments to run in subprocesses
         """
-        if all_args.multi_discrete:
-            from envs.transship_multi_discrete import Env
-        elif all_args.discrete:
-            from envs.transship_new_discrete import Env
-        else:
-            from envs.transship_new_continue import Env
-        self.env_list = [Env(1.0 if all_args.central_controller else all_args.alpha,all_args.ratio_transship,all_args.gamma) for i in range(all_args.n_rollout_threads)]
+
+        self.env_list = [Env(all_args) for i in range(all_args.n_rollout_threads)]
         self.num_envs = all_args.n_rollout_threads
 
         self.num_agent = self.env_list[0].agent_num 
-        self.signal_obs_dim = self.env_list[0].obs_dim * self.num_agent if all_args.central_controller else self.env_list[0].obs_dim
-        self.signal_obs_critic_dim = self.env_list[0].obs_critic_dim * self.num_agent if all_args.central_controller else self.env_list[0].obs_critic_dim
-        self.signal_action_dim = self.env_list[0].action_dim * self.num_agent if all_args.central_controller else self.env_list[0].action_dim
+        self.signal_obs_dim = self.env_list[0].obs_dim
+        self.signal_obs_critic_dim = self.env_list[0].obs_critic_dim
+        self.signal_action_dim = self.env_list[0].action_dim
         self.num_agent = 1 if all_args.central_controller else self.num_agent
 
         self.u_range = 100.0  # control range for continuous control
         self.movable = True
 
         # environment parameters
-        # self.discrete_action_space = True
-        self.discrete_action_space = all_args.discrete
-        self.multi_discrete_action_space = all_args.multi_discrete
-
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
         # if true, even the action is continuous, action will be performed discretely
@@ -89,16 +80,15 @@ class SubprocVecEnv(object):
         # configure spaces
         self.action_space = []
         self.observation_space = []
-        self.share_observation_space = []
-        share_obs_dim = 0
-        share_obs_critic_dim=0
+        self.observation_space_critic = []
+
         for agent in range(self.num_agent):
             total_action_space = []
-            if self.multi_discrete_action_space:
+            if all_args.action_type == 'multi_discrete':
                 for d in self.signal_action_dim:
                     total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space
-            elif self.discrete_action_space:
+            elif all_args.action_type == 'discrete':
                 u_action_space = spaces.Discrete(self.signal_action_dim)  # 5个离散的动作
                 total_action_space.append(u_action_space)
             else:
@@ -118,15 +108,12 @@ class SubprocVecEnv(object):
                 self.action_space.append(total_action_space[0])
 
             # observation space
-            share_obs_dim += self.signal_obs_dim
-            share_obs_critic_dim += self.signal_obs_critic_dim
+
             self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_dim,),
                                                      dtype=np.float32))  # [-inf,inf]
 
-        self.share_observation_critic_space = [spaces.Box(low=-np.inf, high=+np.inf, shape=(share_obs_critic_dim,),
-                                                   dtype=np.float32) for _ in range(self.num_agent)]
-        self.share_observation_space = [spaces.Box(low=-np.inf, high=+np.inf, shape=(share_obs_dim,),
-                                                   dtype=np.float32) for _ in range(self.num_agent)]
+            self.observation_space_critic.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_critic_dim,),
+                                                     dtype=np.float32))
 
     def step(self, actions):
         results = [env.step(action) for env, action in zip(self.env_list, actions)]
@@ -161,14 +148,8 @@ class DummyVecEnv(object):
         """
         envs: list of gym environments to run in subprocesses
         """
-        if all_args.multi_discrete:
-            from envs.transship_multi_discrete import Env
-        elif all_args.discrete:
-            from envs.transship_new_discrete import Env
-        else:
-            from envs.transship_new_continue import Env
-        self.env_list = [Env(1.0 if all_args.central_controller else all_args.alpha,all_args.ratio_transship,all_args.gamma) for i in range(1)]
-        # self.env_list = [Env(all_args.alpha) for i in range(1)]
+
+        self.env_list = [Env(all_args) for i in range(1)]
 
 
         self.num_envs = all_args.n_rollout_threads
@@ -177,9 +158,9 @@ class DummyVecEnv(object):
         # self.num_envs = all_args.n_rollout_threads
 
         self.num_agent = self.env_list[0].agent_num 
-        self.signal_obs_dim = self.env_list[0].obs_dim * self.num_agent if all_args.central_controller else self.env_list[0].obs_dim
-        self.signal_obs_critic_dim = self.env_list[0].obs_critic_dim * self.num_agent if all_args.central_controller else self.env_list[0].obs_critic_dim
-        self.signal_action_dim = self.env_list[0].action_dim * self.num_agent if all_args.central_controller else self.env_list[0].action_dim
+        self.signal_obs_dim = self.env_list[0].obs_dim
+        self.signal_obs_critic_dim = self.env_list[0].obs_critic_dim
+        self.signal_action_dim = self.env_list[0].action_dim
         self.num_agent = 1 if all_args.central_controller else self.num_agent
 
 
@@ -187,8 +168,7 @@ class DummyVecEnv(object):
         self.movable = True
 
         # environment parameters
-        self.discrete_action_space = all_args.discrete
-        self.multi_discrete_action_space = all_args.multi_discrete
+
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
         # if true, even the action is continuous, action will be performed discretely
@@ -198,16 +178,15 @@ class DummyVecEnv(object):
         # configure spaces
         self.action_space = []
         self.observation_space = []
-        self.share_observation_space = []
-        share_obs_dim = 0
-        share_obs_critic_dim = 0
+        self.observation_space_critic = []
+
         for agent in range(self.num_agent):
             total_action_space = []
-            if self.multi_discrete_action_space:
+            if all_args.action_type == 'multi_discrete':
                 for d in self.signal_action_dim:
                     total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space
-            elif self.discrete_action_space:
+            elif all_args.action_type == 'discrete':
                 u_action_space = spaces.Discrete(self.signal_action_dim)  # 5个离散的动作
                 total_action_space.append(u_action_space)
             else:
@@ -225,16 +204,11 @@ class DummyVecEnv(object):
             else:
                 self.action_space.append(total_action_space[0])
 
-            # observation space
-            obs_dim = self.signal_obs_dim  # 单个智能体的观测维度
-            share_obs_dim += obs_dim
-            share_obs_critic_dim += self.signal_obs_critic_dim
-            self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32))  # [-inf,inf]
 
-        self.share_observation_critic_space = [spaces.Box(low=-np.inf, high=+np.inf, shape=(share_obs_critic_dim,),
-                                                   dtype=np.float32) for _ in range(self.num_agent)]
-        self.share_observation_space = [spaces.Box(low=-np.inf, high=+np.inf, shape=(share_obs_dim,),
-                                                   dtype=np.float32) for _ in range(self.num_agent)]
+            self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_dim,), dtype=np.float32))  # [-inf,inf]
+            self.observation_space_critic.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_critic_dim,),
+                                                     dtype=np.float32))
+
 
     def step(self, actions):
 

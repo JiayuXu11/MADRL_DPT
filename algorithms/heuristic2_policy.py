@@ -63,7 +63,7 @@ class Heuristic_Policy:
         pass
 
 
-    def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False,safety_stock=1):
+    def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False,safety_stock=0):
         """
         Compute actions using the given inputs.
         :param obs (np.ndarray): local agent inputs to the actor.
@@ -81,23 +81,25 @@ class Heuristic_Policy:
                 revenue_list.append(revenue_k)
             return revenue_list
 
-        # obs=(obs*DEMAND_MAX)[0]
+        obs=obs[0]
         inv = obs[0]
         demand = obs[1]
-        orders = obs[3:7]
+        orders = obs[2:6]
 
+        
         inv_pred=max(inv+orders[0]-demand,0)
         inv_pred=max(inv_pred+orders[1]-demand,0)
         inv_pred=max(inv_pred+orders[2]-demand,0)
         inv_pred=max(inv_pred+orders[3]-demand,0)
         order_best=np.argmax(get_order_revenue_list(1., 0.2, 0.5, 5, demand))*demand
-        order_tf=1.0*min(demand,inv_pred)-0.5*max(demand-inv_pred,0)-0.2*max(inv_pred-demand,0)<1.0*min(demand,order_best)-0.5*max(demand-order_best,0)-0.2*max(order_best-demand,0)
+        order_tf=(1.0*min(demand,inv_pred)-0.5*max(demand-inv_pred,0)-0.2*max(inv_pred-demand,0)<1.0*min(demand,order_best)-0.5*max(demand-order_best,0)-0.2*max(order_best-demand,0)) and (order_best>inv_pred)
         # order_heu=max(order_best-inv_pred,0) if order_tf else 0
         order_heu=max(order_best-inv_pred+safety_stock,0) if order_tf else 0
 
         # order_heu=order_heu if order_heu>5 else 0
 
 
-
+        # if step >195:
+        #     order_heu = 0
         return torch.tensor([[order_heu,0.]]), torch.tensor(rnn_states_actor)
     

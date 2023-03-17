@@ -24,8 +24,8 @@ class Runner(object):
         self.env_name = self.all_args.env_name
         self.algorithm_name = self.all_args.algorithm_name
         self.experiment_name = self.all_args.experiment_name
-        self.use_centralized_V = self.all_args.use_centralized_V
-        self.instant_info_sharing = self.all_args.instant_info_sharing or self.all_args.central_controller
+        # self.use_centralized_V = self.all_args.use_centralized_V
+        # self.instant_info_sharing = self.all_args.instant_info_sharing or self.all_args.central_controller
         self.delayed_info_sharing = self.all_args.delayed_info_sharing
         self.central_controller = self.all_args.central_controller
         self.use_obs_instead_of_state = self.all_args.use_obs_instead_of_state
@@ -81,18 +81,18 @@ class Runner(object):
         else:
             raise NotImplementedError
 
-        print("share_observation_space: ", self.envs.share_observation_critic_space)
-        print("observation_space: ", self.envs.observation_space)
+        print("critic_observation_space: ", self.envs.observation_space_critic)
+        print("actor_observation_space: ", self.envs.observation_space)
         print("action_space: ", self.envs.action_space)
 
         self.policy = []
         for agent_id in range(self.num_agents):
-            share_observation_critic_space = self.envs.share_observation_critic_space[agent_id] if self.use_centralized_V else self.envs.observation_space[agent_id]
-            policy_observation_space = self.envs.share_observation_space[agent_id] if self.instant_info_sharing else self.envs.observation_space[agent_id]
+            critic_observation_space = self.envs.observation_space_critic[agent_id]
+            policy_observation_space = self.envs.observation_space[agent_id]
             # policy network
             po = Policy(self.all_args,
                         policy_observation_space,
-                        share_observation_critic_space,
+                        critic_observation_space,
                         self.envs.action_space[agent_id],
                         device = self.device)
             self.policy.append(po)
@@ -107,11 +107,11 @@ class Runner(object):
             tr = TrainAlgo(self.all_args, self.policy[agent_id], device = self.device)
             
             # buffer
-            share_observation_critic_space = self.envs.share_observation_critic_space[agent_id] if self.use_centralized_V else self.envs.observation_space[agent_id]
-            policy_observation_space = self.envs.share_observation_space[agent_id] if self.instant_info_sharing else self.envs.observation_space[agent_id]
+            critic_observation_space = self.envs.observation_space_critic[agent_id]
+            policy_observation_space = self.envs.observation_space[agent_id]
             bu = SeparatedReplayBuffer(self.all_args,
                                        policy_observation_space,
-                                       share_observation_critic_space,
+                                       critic_observation_space,
                                        self.envs.action_space[agent_id])
             self.buffer.append(bu)
             self.trainer.append(tr)

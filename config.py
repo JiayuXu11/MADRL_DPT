@@ -211,10 +211,10 @@ def get_config():
     parser.add_argument("--central_controller", type=t_or_f, 
                         default=False, help="是否全部采用中央控制")
 
-    parser.add_argument("--yaml_path", type=str, 
-                        default='setting_yaml\discrete\discrete_no_info_sharing.yaml', help="yaml的路径")
    #  parser.add_argument("--yaml_path", type=str, 
-   #                      default=None, help="yaml的路径")
+                        # default='setting_yaml\multi_discrete\multi_discrete_no_info_sharing.yaml', help="yaml的路径")
+    parser.add_argument("--yaml_path", type=str, 
+                        default=None, help="yaml的路径")
     
     parser.add_argument("--sample_mean_advantage", type=t_or_f, 
                         default=True, help="是否对advantage采用sample_mean_advantage")
@@ -232,11 +232,12 @@ def get_config():
                         default=False, help="transship是否采用ratio的分配机制")
     
     parser.add_argument("--discrete", type=t_or_f, 
-                        default=True, help="是否discrete")
+                        default=True, help="是否discrete(deprecated)")
     parser.add_argument("--multi_discrete", type=t_or_f, 
-                        default=True, help="是否multi_discrete")
+                        default=False, help="是否multi_discrete(deprecated)")
+    
     parser.add_argument("--beta", type=t_or_f, 
-                        default=False, help="连续情况是否采用beta分布")
+                        default=False, help="连续情况是否采用beta分布(deprecated)")
     
     parser.add_argument("--norm_input", type=t_or_f, 
                         default=True, help="是否将输入先映射到-1,1")
@@ -244,5 +245,27 @@ def get_config():
     parser.add_argument("--entropy_decrease", type=t_or_f, 
                         default=True, help="是否递进减少entropy需求")
     parser.add_argument("--entropy_decrease_time", type=int, 
-                        default=5, help="递进减少entropy多少次")
+                        default=5, help="递进减少entropy多少次(deprecated)")
+    parser.add_argument("--entropy_decrease_list", type=float, 
+                        default=[0.5,0.1,0.01,0], help="递进选择的entropy_coef")
+
+    parser.add_argument("--model_new", type=t_or_f, 
+                        default=True, help="是否用新的model")
+    
+    parser.add_argument("--action_type", type=str, 
+                        default='discrete', choices=['discrete', 'multi_discrete', 'continue'],help="actor网络输出格式")
+    parser.add_argument("--obs_transship", type=str, 
+                        default='all_transship', choices=['no_transship', 'self_transship', 'all_transship'],help="transship信息是否作为actor网络的输入")
+    parser.add_argument("--actor_obs_step", type=t_or_f, 
+                        default=True, help="step信息是否作为actor网络的输入")
+    
+    parser.add_argument("--train_episode_length", type=int, 
+                        default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计)")
+    
+    parser.add_argument("--transship_revenue_method", type=str, 
+                        default='ratio',choices=['constant', 'ratio'], help="transship机制创造收益的分配模式")
+    parser.add_argument("--constant_transship_revenue", type=float, 
+                        default=0.1, help="每transship一单位,可收获的收益")
+    parser.add_argument("--ratio_transship_revenue", type=str, 
+                        default=0.7, help="transship接收方获得transship创造价值的比例")
     return parser

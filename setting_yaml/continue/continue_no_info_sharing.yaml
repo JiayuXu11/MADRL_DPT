@@ -2,7 +2,7 @@ algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
 experiment_name: 'continue_no_info_sharing_relu'
 
 # basic setting
-model_dir: "C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_no_info_sharing_tanh/run_seed_1/models"
+model_dir: #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_no_info_sharing_tanh/run_seed_1/models"
 n_rollout_threads: 100
 num_env_steps: 300000000
 num_agents: 3

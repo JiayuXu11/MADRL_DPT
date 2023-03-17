@@ -31,9 +31,10 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
-    # all_args.algorithm_name='heuristic2'
-    # all_args.discrete=False
-    # all_args.norm_input =False
+    all_args.algorithm_name='heuristic2'
+    all_args.action_type='continue'
+    all_args.norm_input =False
+    all_args.actor_obs_step = False
 
     seeds = all_args.seed
 
@@ -82,7 +83,9 @@ if __name__ == "__main__":
         # all_args.std_y_coef=[j/2**4 for j in all_args.std_y_coef]
         # all_args.lr=all_args.lr/2**4
         all_args.clip_bound=[(1-all_args.clip_param),(1+all_args.clip_param)]
-        for i in range(all_args.entropy_decrease_time):
+        for coef in all_args.entropy_decrease_list:
+            if all_args.entropy_decrease:
+                all_args.entropy_coef = coef
             # env
             envs = make_train_env(all_args)
             eval_envs = make_eval_env(all_args) if all_args.use_eval else None
@@ -107,12 +110,12 @@ if __name__ == "__main__":
                 f.write('\n')
             if not all_args.entropy_decrease:
                 break
-            if not all_args.discrete and not all_args.multi_discrete:
+            if all_args.action_type == 'continue':
                 all_args.std_y_coef=[j/2. for j in all_args.std_y_coef]
                 all_args.lr=all_args.lr/2
-            all_args.entropy_coef=all_args.entropy_coef/2
+
             all_args.model_dir = str(config['run_dir'] / 'models')
-            # all_args.clip_bound=[x**1.2 for x in all_args.clip_bound]
+
 
         # post process
         envs.close()

@@ -23,6 +23,7 @@ class SeparatedReplayBuffer(object):
         self._use_valuenorm = args.use_valuenorm
         self._use_proper_time_limits = args.use_proper_time_limits
         self.critic_learning_pure_returns = args.critic_learning_pure_returns
+        self.train_episode_length = args.train_episode_length
 
 
 
@@ -236,6 +237,7 @@ class SeparatedReplayBuffer(object):
                 factor_batch = factor[indices]
                 yield share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, value_preds_batch, return_batch, masks_batch, active_masks_batch, old_action_log_probs_batch, adv_targ, available_actions_batch, factor_batch
 
+    # 没有弄乱顺序，方便rnn迭代
     def naive_recurrent_generator(self, advantages, num_mini_batch):
         n_rollout_threads = self.rewards.shape[1]
         assert n_rollout_threads >= num_mini_batch, (
@@ -244,6 +246,7 @@ class SeparatedReplayBuffer(object):
             "PPO mini batches ({}).".format(n_rollout_threads, num_mini_batch))
         num_envs_per_batch = n_rollout_threads // num_mini_batch
         perm = torch.randperm(n_rollout_threads).numpy()
+        T, N = self.train_episode_length, num_envs_per_batch
         for start_ind in range(0, n_rollout_threads, num_envs_per_batch):
             share_obs_batch = []
             obs_batch = []
@@ -260,24 +263,25 @@ class SeparatedReplayBuffer(object):
             factor_batch = []
             for offset in range(num_envs_per_batch):
                 ind = perm[start_ind + offset]
-                share_obs_batch.append(self.share_obs[:-1, ind])
-                obs_batch.append(self.obs[:-1, ind])
+                share_obs_batch.append(self.share_obs[:T, ind])
+                obs_batch.append(self.obs[:T, ind])
                 rnn_states_batch.append(self.rnn_states[0:1, ind])
                 rnn_states_critic_batch.append(self.rnn_states_critic[0:1, ind])
-                actions_batch.append(self.actions[:, ind])
+                actions_batch.append(self.actions[:T, ind])
                 if self.available_actions is not None:
-                    available_actions_batch.append(self.available_actions[:-1, ind])
-                value_preds_batch.append(self.value_preds[:-1, ind])
-                return_batch.append(self.returns_pure[:-1, ind] if self.critic_learning_pure_returns else self.returns[:-1, ind])
-                masks_batch.append(self.masks[:-1, ind])
-                active_masks_batch.append(self.active_masks[:-1, ind])
-                old_action_log_probs_batch.append(self.action_log_probs[:, ind])
-                adv_targ.append(advantages[:, ind])
+                    available_actions_batch.append(self.available_actions[:T, ind])
+                value_preds_batch.append(self.value_preds[:T, ind])
+                return_batch.append(self.returns_pure[:T, ind] if self.critic_learning_pure_returns else self.returns[:T, ind])
+                masks_batch.append(self.masks[:T, ind])
+                active_masks_batch.append(self.active_masks[:T, ind])
+                old_action_log_probs_batch.append(self.action_log_probs[:T, ind])
+                adv_targ.append(advantages[:T, ind])
                 if self.factor is not None:
-                    factor_batch.append(self.factor[:,ind])
+                    factor_batch.append(self.factor[:T,ind])
 
             # [N[T, dim]]
-            T, N = self.episode_length, num_envs_per_batch
+            # T, N = self.episode_length, num_envs_per_batch
+            
             # These are all from_numpys of size (T, N, -1)
             share_obs_batch = np.stack(share_obs_batch, 1)
             obs_batch = np.stack(obs_batch, 1)

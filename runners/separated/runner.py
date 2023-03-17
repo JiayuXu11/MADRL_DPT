@@ -121,13 +121,7 @@ class CRunner(Runner):
 
 
                 
-                share_obs = []
-                for o in obs:
-                    share_obs.append(list(chain(*o)))
 
-                share_obs_critic = []
-                for o in obs_critic:
-                    share_obs_critic.append(list(chain(*o)))
                 
                 available_actions = np.array([[None for agent_id in range(self.num_agents)] for info in infos])
 
@@ -140,7 +134,7 @@ class CRunner(Runner):
                 demand_log.append(demand)
                 actions_log.append(copy.deepcopy(orders))
 
-                data = obs, share_obs_critic, rewards, dones, infos, available_actions, \
+                data = obs, obs_critic, rewards, dones, infos, available_actions, \
                        values, actions, action_log_probs, \
                        rnn_states, rnn_states_critic 
                 
@@ -220,19 +214,9 @@ class CRunner(Runner):
         obs, obs_critic = self.envs.reset(train , normalize, test_tf)
         # replay buffer
         
-        share_obs = []
-        for o in obs:
-            share_obs.append(list(chain(*o)))
-        share_obs_critic = []
-        for o in obs_critic:
-            share_obs_critic.append(list(chain(*o)))
-        share_obs = np.array(share_obs)
-
         for agent_id in range(self.num_agents): 
-            policy_observation_space = share_obs if self.instant_info_sharing else np.array(list(obs[:, agent_id])).copy()
-            if not self.use_centralized_V:
-                share_obs = np.array(list(obs[:, agent_id]))
-            self.buffer[agent_id].share_obs[0] = share_obs_critic.copy()
+            policy_observation_space = np.array(list(obs[:, agent_id])).copy()
+            self.buffer[agent_id].share_obs[0] = np.array(list(obs_critic[:, agent_id]))
             self.buffer[agent_id].obs[0] = policy_observation_space
             self.buffer[agent_id].available_actions[0] = None
             # self.buffer[agent_id].rnn_states = np.zeros_like(self.buffer[agent_id].rnn_states)
@@ -329,14 +313,9 @@ class CRunner(Runner):
         
         for agent_id in range(self.num_agents):
             policy_observation_space = np.array(list(obs[:, agent_id]))
-            if self.instant_info_sharing:
-                policy_observation_space=[]
-                for o in obs:
-                    policy_observation_space.append(list(chain(*o)))
-            if not self.use_centralized_V:
-                share_obs_critic = np.array(list(obs[:, agent_id]))
+            share_obs_critic_ = np.array(list(share_obs_critic[:, agent_id]))
             
-            self.buffer[agent_id].insert(share_obs_critic, policy_observation_space, rnn_states[:,agent_id],
+            self.buffer[agent_id].insert(share_obs_critic_, policy_observation_space, rnn_states[:,agent_id],
                     rnn_states_critic[:,agent_id],actions[:,agent_id], action_log_probs[:,agent_id],
                     values[:,agent_id], rewards[:,agent_id], masks[:,agent_id])
 
@@ -360,16 +339,6 @@ class CRunner(Runner):
         for eval_index in range(eval_num):
             eval_obs, eval_obs_critic = self.eval_envs.reset(test_tf,self.all_args.norm_input)
             
-            eval_share_obs = []
-            for o in eval_obs:
-                eval_share_obs.append(list(chain(*o)))
-            eval_share_obs = np.array(eval_share_obs)
-
-            eval_share_obs_critic = []
-            for o in eval_obs_critic:
-                eval_share_obs_critic.append(list(chain(*o)))
-            eval_share_obs_critic = np.array(eval_share_obs_critic)
-
             eval_rnn_states = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
             eval_rnn_states_critic = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
             eval_masks = np.ones((self.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
@@ -385,8 +354,8 @@ class CRunner(Runner):
                     self.trainer[agent_id].policy.hist_demand=self.eval_envs.get_hist_demand()[0][agent_id]
                     self.trainer[agent_id].prep_rollout()
                     eval_value,eval_actions,_,temp_rnn_state,temp_rnn_state_critic\
-                        =self.trainer[agent_id].policy.get_actions(eval_share_obs_critic,
-                                                        eval_share_obs if self.instant_info_sharing else eval_obs[:,agent_id],
+                        =self.trainer[agent_id].policy.get_actions(eval_obs_critic[:,agent_id],
+                                                        eval_obs[:,agent_id],
                                                         eval_rnn_states[:,agent_id],
                                                         eval_rnn_states_critic[:,agent_id],
                                                         eval_masks[:,agent_id],
@@ -434,16 +403,6 @@ class CRunner(Runner):
 
                 # Obser reward and next obs
                 eval_obs,eval_obs_critic, eval_rewards, eval_dones, eval_infos = self.eval_envs.step(eval_actions_env)
-                
-                eval_share_obs = []
-                for o in eval_obs:
-                    eval_share_obs.append(list(chain(*o)))
-                eval_share_obs = np.array(eval_share_obs)
-
-                eval_share_obs_critic = []
-                for o in eval_obs_critic:
-                    eval_share_obs_critic.append(list(chain(*o)))
-                eval_share_obs_critic = np.array(eval_share_obs_critic)
 
                 eval_available_actions = None
 
