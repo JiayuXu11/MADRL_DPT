@@ -3,9 +3,9 @@ from tensorboardX import SummaryWriter
 from math import sinh,cosh,tanh
 import random
 from pathlib import Path
-log_dir =Path('try_tb')/'logs'
-print(log_dir)
-writter = SummaryWriter(str(log_dir).replace('\\','/'))
+# log_dir =Path('try_tb')/'logs'
+# print(log_dir)
+# writter = SummaryWriter(str(log_dir).replace('\\','/'))
 
 # def del_folder(path):
 #     if not os.path.exists(path):
@@ -32,7 +32,11 @@ writter = SummaryWriter(str(log_dir).replace('\\','/'))
 #         writter.add_scalars('try',{'tanh':tanh(i)},global_step=i)
 #         writter.add_scalar('i',i+random.random(),i)
 
-from math import exp
-print(exp(0.08*2))
+# from math import exp
+# print(exp(0.08*2))
+
+h =10+5
+-5
+print(h)
         
         

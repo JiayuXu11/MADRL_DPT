@@ -263,9 +263,9 @@ def get_config():
                         default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计)")
     
     parser.add_argument("--transship_revenue_method", type=str, 
-                        default='ratio',choices=['constant', 'ratio'], help="transship机制创造收益的分配模式")
+                        default='market_ratio',choices=['constant', 'ratio', 'market_ratio'], help="transship机制创造收益的分配模式")
     parser.add_argument("--constant_transship_revenue", type=float, 
                         default=0.1, help="每transship一单位,可收获的收益")
-    parser.add_argument("--ratio_transship_revenue", type=str, 
+    parser.add_argument("--ratio_transship_revenue", type=float, 
                         default=0.7, help="transship接收方获得transship创造价值的比例")
     return parser

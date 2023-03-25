@@ -34,6 +34,7 @@ EPISODE_LEN = 200
 
 
 FIXED_COST = 5
+
 EVAL_PTH = ["./eval_data/merton/0/", "./eval_data/merton/1/", "./eval_data/merton/2/"]
 TEST_PTH = ["./test_data/merton/0/", "./test_data/merton/1/", "./test_data/merton/2/"]
 
@@ -256,7 +257,10 @@ class Env(object):
     def step(self, actions):
         
         action = self.action_map(actions) # Map outputs of MADRL to actual ordering actions
-        reward = self.state_update(action) # System state update
+
+        # reward = self.state_update(action) # System state update
+        reward = self.state_update_transship_revenue_sharing(action)
+
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) # Get step obs
         sub_agent_reward = self.get_processed_rewards(reward) # Get processed rewards
 
@@ -506,6 +510,7 @@ class Env(object):
             else:
                 raise Exception('wrong transship revenue aloocated method')
             reward+=transship_revenue
+
             # 最后一天将仓库内剩余货品按成本价折算
             if self.step_num > EPISODE_LEN-1:
                 reward=reward+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
@@ -536,4 +541,96 @@ class Env(object):
             shortage_wihout_transship = max(cur_demand[i]-inv_start_without_transship , 0)
             transship_revenue[i] = max((R[i]-C[i]+P[i])*min(shortage_wihout_transship,ts) - S[i]*ts - H[i]*max(ts-shortage_wihout_transship,0),0)   
         return transship_revenue , transship_volume      
+    
+    # 考虑了transship供需关系，及带来的未来收益的分配模式
+    def state_update_transship_revenue_sharing(self, action):
+        """
+        - Need to be implemented
+        - Update system state and record some states that you may need in other fuctions like get_eval_bw_res, get_orders, etc.
+        - Inputs:
+            - action: list, processed actions for each actor
+            - Modify the inputs as you need
+        - Outputs:
+            - rewards: list, rewards for each actors (typically one-period costs for all actors)
+        """
+        all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
+        cur_demand = [self.demand_list[0][self.step_num], self.demand_list[1][self.step_num],self.demand_list[2][self.step_num]]
+        rewards_after=[]
+        rewards_before = []
+        Vs = []
+        V_befores =[]
+        self.step_num+=1
+
+        # 计算transship前后收益
+        for i in range(self.agent_num):
+            self.order[i].append(action[i][0])
+            self.transship_request[i]=action[i][1]
+            inv_start_before = self.inventory[i]+self.order[i][0]
+            inv_start=self.inventory[i]+self.order[i][0]+self.transship_request[i]
+            self.inventory_start[i]=inv_start
+
+            # transship 后的reward 
+            reward= -C[i]*(sum(action[i]))-S[i]*max(self.transship_request[i],0)+R[i]*min(inv_start,cur_demand[i])-H[i]*max(inv_start-cur_demand[i],0)+P[i]*min(inv_start-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)
+            
+            # transship前的reward
+            reward_before= -C[i]*(action[i][0])+R[i]*min(inv_start_before,cur_demand[i])-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)
+
+            self.shortage[i]=cur_demand[i]-inv_start
+            self.inventory[i]=max(inv_start-cur_demand[i],0.)
+            self.action_history[i].append(action[i])
+            self.order[i]=self.order[i][1:]
+
+            # transship 前的未来收益，可能要考虑gamma
+            V  = 0 
+            # transship 后的未来收益
+            V_before = 0 
+            Vs.append(V)
+            V_befores.append(V_before)
+
+            # 最后一天将仓库内剩余货品按成本价折算
+            if self.step_num > EPISODE_LEN-1:
+                reward=reward+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
+                reward_before=reward_before+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
+            rewards_after.append(reward)
+            rewards_before.append(reward_before)
+
+        transship_revenue = np.array(rewards_after) + self.gamma * np.array(Vs) - np.array(rewards_before) + self.gamma * np.array(V_befores)
+        transship_revenue_sum = np.sum(transship_revenue) 
+        transship_intend_p = sum([t if t>0 else 0 for t in self.transship_intend])
+        transship_intend_n = sum([-t if t<0 else 0 for t in self.transship_intend])
+        ratio_pn = transship_intend_n/(transship_intend_p+transship_intend_n)
+
+        rewards=[]
+        # 把transship收益分了
+        for i in range(self.agent_num):
+
+             # transship 收益分配
+            transship_reallocate = 0
+            if self.transship_revenue_method == 'constant':
+                transship_reallocate = -RT*self.transship_request[i]
+            elif self.transship_revenue_method == 'ratio':
+                if self.transship_request[i]>0:
+                    transship_reallocate = -(1-self.ratio_transship_revenue)*all_transship_revenue[i]
+                else:
+                    transship_reallocate = -(self.transship_request[i]/transship_volume) * sum(all_transship_revenue)*(1-self.ratio_transship_revenue)
+            elif self.transship_revenue_method == 'market_ratio':
+                if self.transship_intend[i] >= 0:
+                    # volume_ratio = self.transship_intend[i]/transship_intend_p
+                    volume_ratio = self.transship_request[i]/transship_volume
+                    revenue_allocated = transship_revenue_sum*ratio_pn*volume_ratio
+                elif self.transship_intend[i]<0:
+                    # volume_ratio = -self.transship_intend[i]/transship_intend_n
+                    volume_ratio = -self.transship_request[i]/transship_volume
+                    revenue_allocated = transship_revenue_sum*(1-ratio_pn)*volume_ratio
+
+                transship_reallocate = revenue_allocated - transship_revenue[i]
+            else:
+                raise Exception('wrong transship revenue allocated method')
+            
+            reward+=transship_reallocate
+            rewards.append(reward)
+            self.reward_selfish_cum[i]+=reward
+            self.reward_selfish[i]=reward
+            
+        return rewards
     

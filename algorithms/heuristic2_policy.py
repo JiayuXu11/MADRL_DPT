@@ -101,5 +101,5 @@ class Heuristic_Policy:
 
         # if step >195:
         #     order_heu = 0
-        return torch.tensor([[order_heu,0.]]), torch.tensor(rnn_states_actor)
+        return torch.tensor([[order_heu,np.random.randint(-10,10)]]), torch.tensor(rnn_states_actor)
     
