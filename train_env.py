@@ -31,10 +31,14 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
-    all_args.algorithm_name='heuristic2'
-    all_args.action_type='continue'
-    all_args.norm_input =False
-    all_args.actor_obs_step = False
+    # all_args.algorithm_name='heuristic2'
+    # all_args.action_type='continue'
+    # all_args.norm_input =False
+    # all_args.actor_obs_step = False
+
+    # all_args.compute_pure_returns=True
+    # all_args.instant_info_sharing=True
+
 
     seeds = all_args.seed
 

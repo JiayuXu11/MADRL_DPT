@@ -211,10 +211,10 @@ def get_config():
     parser.add_argument("--central_controller", type=t_or_f, 
                         default=False, help="是否全部采用中央控制")
 
-   #  parser.add_argument("--yaml_path", type=str, 
-                        # default='setting_yaml\multi_discrete\multi_discrete_no_info_sharing.yaml', help="yaml的路径")
     parser.add_argument("--yaml_path", type=str, 
-                        default=None, help="yaml的路径")
+                        default='setting_yaml\discrete\central_test.yaml', help="yaml的路径")
+   #  parser.add_argument("--yaml_path", type=str, 
+   #                      default=None, help="yaml的路径")
     
     parser.add_argument("--sample_mean_advantage", type=t_or_f, 
                         default=True, help="是否对advantage采用sample_mean_advantage")
@@ -224,6 +224,8 @@ def get_config():
     
     parser.add_argument("--critic_learning_pure_returns", type=t_or_f, 
                         default=False, help="若为True,则critic network学习没有被处理过的returns,而非经gae或其他方式处理过的return")
+    parser.add_argument("--advantage_pure_returns", type=t_or_f, 
+                        default=False, help="若为True,则advantage使用没有被处理过的returns,而非经gae或其他方式处理过的return")
     
     parser.add_argument("--alpha", type=float, 
                         default=0.7, help="自私程度")
@@ -268,4 +270,7 @@ def get_config():
                         default=0.1, help="每transship一单位,可收获的收益")
     parser.add_argument("--ratio_transship_revenue", type=float, 
                         default=0.7, help="transship接收方获得transship创造价值的比例")
+    
+    parser.add_argument("--lead_time", type=int, 
+                        default=8, help="订货到达时间")
     return parser

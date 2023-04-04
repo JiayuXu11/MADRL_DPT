@@ -171,11 +171,11 @@ class SeparatedReplayBuffer(object):
                 self.returns[-1] = next_value
                 for step in reversed(range(self.rewards.shape[0])):
                     self.returns[step] = self.returns[step + 1] * self.gamma * self.masks[step + 1] + self.rewards[step]
-            # debug看看
-            self.returns_pure=np.zeros((self.episode_length + 1, self.n_rollout_threads, 1), dtype=np.float32)
-            self.returns_pure[-1] = next_value
-            for step in reversed(range(self.rewards.shape[0])):
-                self.returns_pure[step] = self.returns_pure[step + 1] * self.gamma * self.masks[step + 1] + self.rewards[step]
+        # debug看看
+        self.returns_pure=np.zeros((self.episode_length + 1, self.n_rollout_threads, 1), dtype=np.float32)
+        self.returns_pure[-1] = next_value
+        for step in reversed(range(self.rewards.shape[0])):
+            self.returns_pure[step] = self.returns_pure[step + 1] * self.gamma * self.masks[step + 1] + self.rewards[step]
 
     def feed_forward_generator(self, advantages, num_mini_batch=None, mini_batch_size=None):
         episode_length, n_rollout_threads = self.rewards.shape[0:2]

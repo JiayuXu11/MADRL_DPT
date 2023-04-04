@@ -43,6 +43,7 @@ class HAPPO():
         self._use_policy_active_masks = args.use_policy_active_masks
 
         self.sample_mean_advantage=args.sample_mean_advantage
+        self.advantage_pure_returns =args.advantage_pure_returns
         if self._use_popart:
             self.value_normalizer = PopArt(1, device=self.device)
         elif self._use_valuenorm:
@@ -190,10 +191,11 @@ class HAPPO():
 
         :return train_info: (dict) contains information regarding training update (e.g. loss, grad norms, etc).
         """
+        buffer_returns =buffer.pure_returns[:-1] if self.advantage_pure_returns else buffer.returns[:-1]
         if self._use_popart or self._use_valuenorm:
-            advantages = buffer.returns[:-1] - self.value_normalizer.denormalize(buffer.value_preds[:-1])
+            advantages = buffer_returns - self.value_normalizer.denormalize(buffer.value_preds[:-1])
         else:
-            advantages = buffer.returns[:-1] - buffer.value_preds[:-1]
+            advantages = buffer_returns - buffer.value_preds[:-1]
 
         advantages_copy = advantages.copy()
         advantages_copy[buffer.active_masks[:-1] == 0.0] = np.nan
@@ -201,9 +203,9 @@ class HAPPO():
         std_advantages = np.nanstd(advantages_copy)
         # 如果这样，岂不是变成了以这批sample的平均水平，作为判断好坏的标准
         if self.sample_mean_advantage:
-            advantages = (advantages - mean_advantages) / (std_advantages + 1e-5)
+            advantages = (advantages - mean_advantages) / (std_advantages + 1e-10)
         else:
-            advantages = advantages  / (std_advantages + 1e-5)
+            advantages = advantages  / (std_advantages + 1e-10)
 
         train_info = {}
 

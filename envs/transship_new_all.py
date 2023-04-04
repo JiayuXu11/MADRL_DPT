@@ -26,8 +26,7 @@ DEMAND_MAX = 20
 ACTION_DIM_DICT = {'discrete':(DEMAND_MAX*2+1)*(DEMAND_MAX+1),'multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1],'continue':2}
 
 
-LEAD_TIME = 4
-OBS_DIM = 3+LEAD_TIME+2*AGENT_NUM
+
 CRITIC_OBS_DIM = 13
 EPISODE_LEN = 200
 # ALPHA=0.7
@@ -122,7 +121,7 @@ class Env(object):
         # Define the member variables you need here.
         # The following three memeber variables must be defined
         self.agent_num = AGENT_NUM
-
+        self.lead_time = args.lead_time
         # actor_obs
         self.instant_info_sharing=args.instant_info_sharing
         self.obs_transship=args.obs_transship
@@ -170,7 +169,7 @@ class Env(object):
         self.test_index = 0 # Counter for evaluation
 
     def get_obs_dim(self, info_sharing, obs_step):
-        base_dim = 2 + LEAD_TIME
+        base_dim = 2 + self.lead_time
         transship_dim = 2 
         step_dim = 1 if obs_step else 0
 
@@ -197,7 +196,7 @@ class Env(object):
         self.train = train
         self.normalize = normalize
         self.inventory = [S_I for i in range(AGENT_NUM)]
-        self.order = [[S_O for i in range(LEAD_TIME)] for j in range(AGENT_NUM)]
+        self.order = [[S_O for i in range(self.lead_time)] for j in range(AGENT_NUM)]
         self.transship_request = [0 for i in range(AGENT_NUM)]
         self.transship_intend = [0 for i in range(AGENT_NUM)]
 
@@ -377,7 +376,7 @@ class Env(object):
             i=0 if i > self.agent_num-1 else i
         
         # 最后几天订的货，因为leadtime原因也到不了
-        if not self.actor_obs_step and (self.step_num > EPISODE_LEN-LEAD_TIME-1):
+        if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
             order_amounts = [0 for _ in range(self.agent_num)]
 
         mapped_actions=[k for k in zip(order_amounts,transship_amounts)]
@@ -598,7 +597,7 @@ class Env(object):
         transship_revenue_sum = np.sum(transship_revenue) 
         transship_intend_p = sum([t if t>0 else 0 for t in self.transship_intend])
         transship_intend_n = sum([-t if t<0 else 0 for t in self.transship_intend])
-        ratio_pn = transship_intend_n/(transship_intend_p+transship_intend_n)
+        ratio_pn = transship_intend_n/(transship_intend_p+transship_intend_n+1e-10)
 
         rewards=[]
         # 把transship收益分了
