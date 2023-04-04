@@ -272,5 +272,5 @@ def get_config():
                         default=0.7, help="transship接收方获得transship创造价值的比例")
     
     parser.add_argument("--lead_time", type=int, 
-                        default=8, help="订货到达时间")
+                        default=4, help="订货到达时间")
     return parser
