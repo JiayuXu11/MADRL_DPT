@@ -3,7 +3,7 @@ import gym
 from gym import spaces
 # from envs.newsvendor_continue import Env
 # from envs.newsvendor import Env
-from envs.transship_new_all import Env
+from envs.transship_new_cost import Env
 # from envs.serial import Env
 #from envs.net_2x3 import Env
 
@@ -84,7 +84,7 @@ class SubprocVecEnv(object):
 
         for agent in range(self.num_agent):
             total_action_space = []
-            if all_args.action_type == 'multi_discrete':
+            if all_args.action_type == 'multi_discrete' or all_args.action_type == 'central_multi_discrete' or all_args.action_type == 'central_discrete':
                 for d in self.signal_action_dim:
                     total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space
@@ -182,7 +182,7 @@ class DummyVecEnv(object):
 
         for agent in range(self.num_agent):
             total_action_space = []
-            if all_args.action_type == 'multi_discrete':
+            if all_args.action_type == 'multi_discrete' or all_args.action_type == 'central_multi_discrete' or all_args.action_type == 'central_discrete':
                 for d in self.signal_action_dim:
                     total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
             # physical action space

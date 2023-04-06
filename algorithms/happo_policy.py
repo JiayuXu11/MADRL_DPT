@@ -26,7 +26,7 @@ class HAPPO_Policy:
         self.share_obs_space = cent_obs_space
         self.act_space = act_space
 
-        if args.multi_discrete:
+        if args.model_new:
             from algorithms.actor_critic_changed import Actor, Critic
         else:
             from algorithms.actor_critic import Actor, Critic

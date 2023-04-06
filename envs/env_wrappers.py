@@ -2,7 +2,7 @@ import numpy as np
 import gym
 from gym import spaces
 # from envs.newsvendor import Env
-from envs.transship_new import Env
+from envs.transship_new_cost import Env
 # from envs.serial import Env
 #from envs.net_2x3 import Env
 

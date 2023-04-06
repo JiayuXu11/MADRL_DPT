@@ -252,10 +252,10 @@ def get_config():
                         default=[0.5,0.1,0.01,0], help="递进选择的entropy_coef")
 
     parser.add_argument("--model_new", type=t_or_f, 
-                        default=True, help="是否用新的model")
+                        default=False, help="是否用新的model")
     
     parser.add_argument("--action_type", type=str, 
-                        default='discrete', choices=['discrete', 'multi_discrete', 'continue'],help="actor网络输出格式")
+                        default='discrete', choices=['discrete', 'multi_discrete', 'continue','central_multi_discrete'],help="actor网络输出格式")
     parser.add_argument("--obs_transship", type=str, 
                         default='all_transship', choices=['no_transship', 'self_transship', 'all_transship'],help="transship信息是否作为actor网络的输入")
     parser.add_argument("--actor_obs_step", type=t_or_f, 

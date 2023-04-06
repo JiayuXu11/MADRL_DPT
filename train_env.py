@@ -39,6 +39,9 @@ if __name__ == "__main__":
     # all_args.compute_pure_returns=True
     # all_args.instant_info_sharing=True
 
+    # all_args.action_type='multi_discrete'
+    # all_args.central_controller =True
+
 
     seeds = all_args.seed
 
@@ -87,13 +90,20 @@ if __name__ == "__main__":
         # all_args.std_y_coef=[j/2**4 for j in all_args.std_y_coef]
         # all_args.lr=all_args.lr/2**4
         all_args.clip_bound=[(1-all_args.clip_param),(1+all_args.clip_param)]
+
+        num_agents = all_args.num_agents
+        if all_args.central_controller:
+            num_agents = 1
+            all_args.instant_info_sharing=True
+            all_args.action_type= 'central_multi_discrete' if 'multi' in all_args.action_type else 'central_discrete'
         for coef in all_args.entropy_decrease_list:
             if all_args.entropy_decrease:
                 all_args.entropy_coef = coef
             # env
             envs = make_train_env(all_args)
             eval_envs = make_eval_env(all_args) if all_args.use_eval else None
-            num_agents = 1 if all_args.central_controller else all_args.num_agents
+
+            
 
             config = {
                 "all_args": all_args,

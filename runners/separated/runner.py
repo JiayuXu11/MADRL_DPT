@@ -280,7 +280,8 @@ class CRunner(Runner):
             for temp_action_env in temp_actions_env:
                 one_hot_action_env.append(temp_action_env[i])
                 if self.all_args.central_controller:
-                    one_hot_action_env = temp_action_env[i].reshape(-1,self.all_args.num_involver).T
+                    one_hot_action_env = temp_action_env[i].reshape(self.all_args.num_involver,-1)
+                    # print(np.where(one_hot_action_env >= 1))
             actions_env.append(one_hot_action_env)
 
         values = np.array(value_collector).transpose(1, 0, 2)
@@ -377,10 +378,12 @@ class CRunner(Runner):
                     if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
                         for i in range(self.envs.action_space[agent_id].shape):
                             uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
+                            # print(np.where(uc_action_env >= 1))
                             if i == 0:
                                 action_env = uc_action_env
                             else:
                                 action_env = np.concatenate((action_env, uc_action_env), axis=1)
+                                # print(np.where(action_env >= 1))
                     elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
                         action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action], 1)
                     else:
@@ -388,7 +391,6 @@ class CRunner(Runner):
                         # raise NotImplementedError
 
                     temp_actions_env.append(action_env)
-
 
                 eval_values_steps[eval_step]=eval_values
                 #eval_actions = np.array(eval_actions_collector).transpose(1,0,2)
@@ -398,7 +400,8 @@ class CRunner(Runner):
                     for eval_temp_action_env in temp_actions_env:
                         eval_one_hot_action_env.append(eval_temp_action_env[i])
                         if self.all_args.central_controller:
-                            eval_one_hot_action_env = eval_temp_action_env[i].reshape(-1,self.all_args.num_involver).T
+                            eval_one_hot_action_env = eval_temp_action_env[i].reshape(self.all_args.num_involver,-1)
+                            # print(np.where(eval_one_hot_action_env >= 1))
                     eval_actions_env.append(eval_one_hot_action_env)
 
                 # Obser reward and next obs
@@ -422,9 +425,9 @@ class CRunner(Runner):
                     for agent_id in range(self.num_involver):
                         self.writter.add_scalars(main_tag='{eval_or_test}_{eval_index}/Execution_{agent_id}'.format(eval_or_test='test' if test_tf else 'eval',eval_index=eval_index,agent_id=agent_id),
                                                 tag_scalar_dict=eval_infos[0][agent_id],global_step= eval_step)
-            rewards_log=np.array(rewards_log).reshape((200,3))
+            rewards_log=np.array(rewards_log).reshape((self.episode_length,self.num_involver))
             if eval_index<3:
-                eval_returns=np.zeros((self.episode_length + 1,3), dtype=np.float32)
+                eval_returns=np.zeros((self.episode_length + 1,self.num_involver), dtype=np.float32)
                 eval_returns[-1] = 0
                 for step in reversed(range(rewards_log.shape[0])):
                     eval_returns[step] = eval_returns[step + 1] * self.all_args.gamma  + rewards_log[step]
