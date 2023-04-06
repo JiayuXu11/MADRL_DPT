@@ -15,7 +15,7 @@ P = [0.5, 0.5, 0.5, 0.5, 0.5]  # penalty for unsatisfied demand
 R = [3 ,3 ,3 ,3 ,3]  # revenue per unit
 C = [2 ,2 ,2 ,2 ,2]  # purchasing cost
 S = [0.5, 0.5, 0.5, 0.5, 0.5]  # unit shipping cost
-RT = 0.1 # revenue per transshipping unit
+# RT = 0.1 # revenue per transshipping unit
 
 S_I = 10
 S_O = 10
@@ -500,7 +500,7 @@ class Env(object):
             # transship 收益分配
             transship_revenue = 0
             if self.transship_revenue_method == 'constant':
-                transship_revenue = -RT*self.transship_request[i]
+                transship_revenue = -self.constant_transship_revenue*self.transship_request[i]
             elif self.transship_revenue_method == 'ratio':
                 if self.transship_request[i]>0:
                     transship_revenue = -(1-self.ratio_transship_revenue)*all_transship_revenue[i]
@@ -602,11 +602,12 @@ class Env(object):
         rewards=[]
         # 把transship收益分了
         for i in range(self.agent_num):
+            reward = rewards_after[i]
 
              # transship 收益分配
             transship_reallocate = 0
             if self.transship_revenue_method == 'constant':
-                transship_reallocate = -RT*self.transship_request[i]
+                transship_reallocate = -self.constant_transship_revenue*self.transship_request[i]
             elif self.transship_revenue_method == 'ratio':
                 if self.transship_request[i]>0:
                     transship_reallocate = -(1-self.ratio_transship_revenue)*all_transship_revenue[i]
