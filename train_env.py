@@ -96,6 +96,7 @@ if __name__ == "__main__":
             num_agents = 1
             all_args.instant_info_sharing=True
             all_args.action_type= 'central_multi_discrete' if 'multi' in all_args.action_type else 'central_discrete'
+            all_args.alpha = 0
         for coef in all_args.entropy_decrease_list:
             if all_args.entropy_decrease:
                 all_args.entropy_coef = coef

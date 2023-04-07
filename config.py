@@ -255,7 +255,7 @@ def get_config():
                         default=False, help="是否用新的model")
     
     parser.add_argument("--action_type", type=str, 
-                        default='discrete', choices=['discrete', 'multi_discrete', 'continue','central_multi_discrete'],help="actor网络输出格式")
+                        default='discrete', choices=['discrete', 'multi_discrete', 'continue','central_multi_discrete','central_discrete'],help="actor网络输出格式")
     parser.add_argument("--obs_transship", type=str, 
                         default='all_transship', choices=['no_transship', 'self_transship', 'all_transship'],help="transship信息是否作为actor网络的输入")
     parser.add_argument("--actor_obs_step", type=t_or_f, 

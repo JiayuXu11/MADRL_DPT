@@ -132,7 +132,6 @@ class Env(object):
             action_ = [np.argmax(i) for i in actions]
         else:
             action_ = actions
-
         action = self.action_map(action_) # Map outputs of MADRL to actual ordering actions
         reward = self.state_update(action) # System state update
         sub_agent_obs = self.get_step_obs(action) # Get step obs
