@@ -191,7 +191,7 @@ class HAPPO():
 
         :return train_info: (dict) contains information regarding training update (e.g. loss, grad norms, etc).
         """
-        buffer_returns =buffer.pure_returns[:-1] if self.advantage_pure_returns else buffer.returns[:-1]
+        buffer_returns =buffer.returns_pure[:-1] if self.advantage_pure_returns else buffer.returns[:-1]
         if self._use_popart or self._use_valuenorm:
             advantages = buffer_returns - self.value_normalizer.denormalize(buffer.value_preds[:-1])
         else:
