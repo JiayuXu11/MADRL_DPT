@@ -212,7 +212,7 @@ def get_config():
                         default=False, help="是否全部采用中央控制")
 
     parser.add_argument("--yaml_path", type=str, 
-                        default='setting_yaml\discrete\central_test.yaml', help="yaml的路径")
+                        default='setting_yaml/discrete/0409_error.yaml', help="yaml的路径")
    #  parser.add_argument("--yaml_path", type=str, 
    #                      default=None, help="yaml的路径")
     

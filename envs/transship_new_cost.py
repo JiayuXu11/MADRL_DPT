@@ -11,7 +11,7 @@ import random
 # 4. File path of your evaluation demand data
 # 5. Other parameters
 H = [0.2, 0.2, 0.2, 0.2, 0.2]  # holding cost
-P = [4.0, 4.0, 4.0, 4.0, 4.0]  # penalty for unsatisfied demand
+P = [3.5, 3.5, 3.5, 3.5, 3.5]  # penalty for unsatisfied demand
 C = [2 ,2 ,2 ,2 ,2]  # purchasing cost
 S = [0.5, 0.5, 0.5, 0.5, 0.5]  # unit shipping cost
 # RT = 0.1 # revenue per transshipping unit
