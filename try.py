@@ -1,98 +1,46 @@
-# import os
-# from tensorboardX import SummaryWriter
-# from math import sinh,cosh,tanh
-# import random
-# from pathlib import Path
-# # log_dir =Path('try_tb')/'logs'
-# # print(log_dir)
-# # writter = SummaryWriter(str(log_dir).replace('\\','/'))
+import os
+from envs.generator_copy import merton
+import numpy as np
+from matplotlib.pyplot import plot
+EVAL_PTH = ["./eval_data/merton/0/", "./eval_data/merton/1/", "./eval_data/merton/2/"]
 
-# # def del_folder(path):
-# #     if not os.path.exists(path):
-# #         print('{} not exist'.format(path))
-# #         return None
-# #     ls = os.listdir(path)
-# #     for i in ls:
-# #         c_path=os.path.join(path,i)
-# #         if os.path.isdir(c_path):
-# #             del_folder(c_path)
-# #         else:
-# #             os.remove(c_path)
+def get_eval_data():
+    """
+    - Need to be implemented
+    - Load local demand data for evaluation
+    - Inputs:
+        - Modify the inputs as you need
+    - Outputs:
+        - n_eval: int, number of demand sequences (also number of episodes in one evaluation)
+        - eval_data: list, demand data for evaluation
+    """
+    files_0 = os.listdir(EVAL_PTH[0])
+    n_eval = len(files_0)
+    eval_data=[]
+  
+    for i in range(n_eval):
+        eval_data_i=[]
+        for j in range(len(EVAL_PTH)):
+            files=os.listdir(EVAL_PTH[j])
+            data = []
+            with open(EVAL_PTH[j] + files[i], "rb") as f:
+                lines = f.readlines()
+                for line in lines:
+                    data.append(int(line))
+            eval_data_i.append(data)
+        eval_data.append(eval_data_i)
+    # print(np.array(eval_data).shape)
+    return n_eval, eval_data
 
-# # for j in range(10):
-# #     for i in range(5):
-# #         dict_tb={}
-# #         dict_tb['sin']=sinh(i)+random.random()
-# #         dict_tb['cos']=cosh(i)+random.random()
-# #         if j>0 and i==0:
-# #             writter.close()
-# #             del_folder(str(log_dir/'try').replace('\\','/'))
-# #             writter=SummaryWriter(str(log_dir).replace('\\','/'))
-# #         writter.add_scalars('try',dict_tb,global_step=i)
-# #         writter.add_scalars('try',{'tanh':tanh(i)},global_step=i)
-# #         writter.add_scalar('i',i+random.random(),i)
-
-# # from math import exp
-# # print(exp(0.08*2))
-
-# h =10+5
-# -5
-# print(h)
-        
-        
-# import turtle
-# import time
-
-# # Set up the turtle
-# t = turtle.Turtle()
-# t.hideturtle()
-# t.speed(0)
-# t.pensize(5)
-
-# # Define the heart shape
-# def heart():
-#     t.color('red', 'pink')
-#     t.begin_fill()
-#     t.left(45)
-#     t.forward(100)
-#     t.circle(50, 180)
-#     t.right(90)
-#     t.circle(50, 180)
-#     t.forward(100)
-#     t.end_fill()
-
-# # Draw the heart
-# heart()
-
-# # Make the heart beat
-# while True:
-#     t.clear()
-#     t.pensize(5)
-#     t.begin_fill()
-#     t.color('red', 'pink')
-#     t.left(45)
-#     t.forward(120)
-#     t.circle(60, 180)
-#     t.right(90)
-#     t.circle(60, 180)
-#     t.forward(120)
-#     t.end_fill()
-#     time.sleep(0.5)
-#     t.clear()
-#     time.sleep(0.5)
-
-import time 
-import _thread as thread
-
-def heart(): 
-    for i in range(100): 
-        print('\U0001f619') 
-        time.sleep(0.01) 
-    print('\n') 
-
-for i in range(100): 
-    thread.start_new_thread(heart, ()) 
-    time.sleep(0.1) 
-
-while 1: 
-    pass 
+n_eval,eval_data=get_eval_data()
+all_demand=0
+for n in range(n_eval):
+    for agent in range(3):
+        for day in range(200):
+            all_demand+=eval_data[n][agent][day]
+# mean_demand=all_demand/n_eval/3/200
+# print(mean_demand)
+# print(mean_demand*3)
+a= merton(200, 20).demand_list
+plot(a)
+print(a)

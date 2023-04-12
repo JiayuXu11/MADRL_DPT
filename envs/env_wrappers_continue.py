@@ -4,6 +4,7 @@ from gym import spaces
 # from envs.newsvendor_continue import Env
 # from envs.newsvendor import Env
 from envs.transship_new_cost import Env
+# from envs.transship_new_all import Env
 # from envs.ms import Env
 # from envs.serial import Env
 #from envs.net_2x3 import Env
