@@ -11,6 +11,7 @@ import random
 # 4. File path of your evaluation demand data
 # 5. Other parameters
 H = [0.2, 0.2, 0.2, 0.2, 0.2]  # holding cost
+R = [3.0, 3.0, 3.0, 3.0, 3.0] 
 P = [3.5, 3.5, 3.5, 3.5, 3.5]  # penalty for unsatisfied demand
 C = [2 ,2 ,2 ,2 ,2]  # purchasing cost
 S = [0.5, 0.5, 0.5, 0.5, 0.5]  # unit shipping cost
@@ -159,6 +160,9 @@ class Env(object):
         self.reward_selfish_cum=[]
         self.reward=[]
         self.reward_cum=[]
+
+        self.reward_type=args.reward_type
+        self.reward_norm_multiplier = args.reward_norm_multiplier
         #============================================================================ 
 
         self.n_eval, self.eval_data = get_eval_data() # Get demand data for evaluation
@@ -568,11 +572,13 @@ class Env(object):
             inv_start=self.inventory[i]+self.order[i][0]+self.transship_request[i]
             self.inventory_start[i]=inv_start
 
+            revenue_demand =cur_demand[i]*R[i] if 'reward' in self.reward_type else 0
+            norm_drift =cur_demand[i]*self.reward_norm_multiplier if 'norm' in self.reward_type else 0 
             # transship 后的reward 
-            reward= -C[i]*(sum(action[i]))-S[i]*max(self.transship_request[i],0)-H[i]*max(inv_start-cur_demand[i],0)+P[i]*min(inv_start-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)
+            reward= -C[i]*(sum(action[i]))-S[i]*max(self.transship_request[i],0)-H[i]*max(inv_start-cur_demand[i],0)+P[i]*min(inv_start-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)+revenue_demand+norm_drift
             
             # transship前的reward
-            reward_before= -C[i]*(action[i][0])-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)
+            reward_before= -C[i]*(action[i][0])-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)+revenue_demand+norm_drift
 
             self.shortage[i]=cur_demand[i]-inv_start
             self.inventory[i]=max(inv_start-cur_demand[i],0.)

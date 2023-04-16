@@ -440,4 +440,5 @@ class CRunner(Runner):
                                                                         'real_V': eval_returns[step][agent_id],},
                                                                         global_step= step)
         bw_res = self.eval_envs.get_eval_bw_res()
-        return np.mean(overall_reward), bw_res
+        norm_reward_drift = self.all_args.reward_norm_multiplier*self.all_args.demand_mean_val if 'norm' in self.all_args.reward_type else 0 
+        return np.mean(overall_reward)-norm_reward_drift, bw_res

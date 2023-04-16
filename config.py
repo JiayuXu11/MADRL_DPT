@@ -212,7 +212,7 @@ def get_config():
                         default=False, help="是否全部采用中央控制")
 
     parser.add_argument("--yaml_path", type=str, 
-                        default='setting_yaml/discrete/0409_error.yaml', help="yaml的路径")
+                        default='setting_yaml/discrete/central_test.yaml', help="yaml的路径")
    #  parser.add_argument("--yaml_path", type=str, 
    #                      default=None, help="yaml的路径")
     
@@ -273,4 +273,10 @@ def get_config():
     
     parser.add_argument("--lead_time", type=int, 
                         default=4, help="订货到达时间")
+    parser.add_argument("--reward_type", type=str, 
+                        default='norm_cost', choices=['cost', 'reward', 'norm_cost'], help="reward 是什么")
+    parser.add_argument("--reward_norm_multiplier", type=float, 
+                        default=2.4, help="使reward均值为0而添加在当期demand上的系数")
+    parser.add_argument("--demand_mean_val", type=float, 
+                        default=9.478111111111112, help="验证集需求的平均数")
     return parser

@@ -38,9 +38,10 @@ for n in range(n_eval):
     for agent in range(3):
         for day in range(200):
             all_demand+=eval_data[n][agent][day]
-# mean_demand=all_demand/n_eval/3/200
-# print(mean_demand)
-# print(mean_demand*3)
+mean_demand=all_demand/n_eval/3/200
+print(mean_demand)
+print(mean_demand*3)
+print(mean_demand*2.4)
 a= merton(200, 20).demand_list
 plot(a)
 print(a)
