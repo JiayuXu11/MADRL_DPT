@@ -2,7 +2,8 @@ import os
 from envs.generator_copy import merton
 import numpy as np
 from matplotlib.pyplot import plot
-EVAL_PTH = ["./eval_data/merton/0/", "./eval_data/merton/1/", "./eval_data/merton/2/"]
+# EVAL_PTH = ["./eval_data/merton/0/", "./eval_data/merton/1/", "./eval_data/merton/2/"]
+EVAL_PTH = ["C:/Users/Jerry/Desktop/data/eval_data/merton/0/","C:/Users/Jerry/Desktop/data/eval_data/merton/1/","C:/Users/Jerry/Desktop/data/eval_data/merton/2/"]
 
 def get_eval_data():
     """

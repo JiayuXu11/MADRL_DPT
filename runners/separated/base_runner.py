@@ -50,6 +50,11 @@ class Runner(object):
         # dir
         self.model_dir = self.all_args.model_dir
 
+        # eval or test mean demand
+        self.demand_mean_val=self.get_mean_demand(self.all_args.eval_dir)
+        self.demand_mean_test=self.get_mean_demand(self.all_args.test_dir)
+
+
         if self.use_render:
             self.run_dir = config["run_dir"]
             self.gif_dir = str(self.run_dir / 'gifs')
@@ -118,7 +123,24 @@ class Runner(object):
 
         if self.model_dir is not None:
             self.restore_normalizer()
-            
+    # 给需求路径，算平均需求
+    def get_mean_demand(self,dir):
+        path = [dir+'/{}/'.format(i) for i in range(self.agent_num)]
+        files_0 = os.listdir(path[0])
+        n_eval = len(files_0)
+        sum_demand=0
+        for i in range(n_eval):
+            eval_data_i=[]
+            for j in range(len(path)):
+                files=os.listdir(path[j])
+                data = []
+                with open(path[j] + files[i], "rb") as f:
+                    lines = f.readlines()
+                    for line in lines[:self.episode_length]:
+                        sum_demand+=int(line)
+        mean_demand=sum_demand/n_eval/len(path)/self.episode_length
+        return mean_demand
+
     def run(self):
         raise NotImplementedError
 

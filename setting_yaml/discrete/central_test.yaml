@@ -2,7 +2,7 @@ algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
 experiment_name: 'central_controller'
 
 # basic setting
-model_dir:  "C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/setting_yaml/error_model/central_controller_model"
+model_dir:  "C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/setting_yaml/error_model/central_controller"
 n_rollout_threads: 300
 num_env_steps: 300000000
 num_agents: 3
@@ -43,7 +43,7 @@ recurrent_N: 2
 layer_N: 2
 hidden_size: 256
 hidden_size_critic: 64 # critic
-use_ReLU: False
+use_ReLU: True
 weight_decay: 0
 
 # ppo
