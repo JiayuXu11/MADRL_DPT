@@ -125,7 +125,7 @@ class Runner(object):
             self.restore_normalizer()
     # 给需求路径，算平均需求
     def get_mean_demand(self,dir):
-        path = [dir+'/{}/'.format(i) for i in range(self.agent_num)]
+        path = [dir+'/{}/'.format(i) for i in range(self.num_involver)]
         files_0 = os.listdir(path[0])
         n_eval = len(files_0)
         sum_demand=0

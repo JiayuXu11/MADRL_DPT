@@ -30,10 +30,11 @@ class CRunner(Runner):
         for episode in range(episodes):
             
             if episode % self.eval_interval == 0 and self.use_eval:
-                re, bw_res = self.eval()
-                self.writter.add_scalars('return', {str(self.all_args.entropy_coef):re}, episode)
-                print("Eval average reward: ", re, " Eval ordering fluctuation measurement (downstream to upstream): ", bw_res)
-                print("Best Eval average reward(before): ", best_reward)
+                re, dict_write = self.eval()
+                dict_write.update({'return':re})
+                self.writter.add_scalars('cost_graph', dict_write, episode)
+                print("Eval average cost: ", re, " Eval cost composition: ", dict_write)
+                print("Best Eval average cost(before): ", best_reward)
                 # test_reward,_=self.eval(test_tf=True)
                 # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
                 if(re > best_reward):
@@ -42,7 +43,7 @@ class CRunner(Runner):
                         print("A better model is saved!")
                     
                     best_reward = re
-                    best_bw = bw_res
+                    best_dict_write = dict_write
                     record = 0
                 elif(episode > self.n_warmup_evaluations):
                     record += 1
@@ -50,9 +51,9 @@ class CRunner(Runner):
                         print("Training finished because of no imporvement for " + str(self.n_no_improvement_thres) + " evaluations")
                         self.model_dir=str(self.run_dir / 'models')
                         self.restore()
-                        test_reward,_=self.eval(test_tf=True)
-                        print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
-                        return best_reward, test_reward
+                        test_reward,dict_write_test=self.eval(test_tf=True)
+                        print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
+                        return best_reward,best_dict_write, test_reward, dict_write_test
                 # break
 
             self.warmup(train = True, normalize = self.all_args.norm_input, test_tf = False)
@@ -204,10 +205,13 @@ class CRunner(Runner):
                 inv_log = []
                 actions_log = []
                 demand_log = []
-            # eval
-        test_reward,_=self.eval(test_tf=True)
-        print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
-        return best_reward, test_reward
+
+        print("Training finished because of finish all the episodes: " + episodes + " episodes")
+        self.model_dir=str(self.run_dir / 'models')
+        self.restore()
+        test_reward,dict_write_test=self.eval(test_tf=True)
+        print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
+        return best_reward,best_dict_write, test_reward, dict_write_test
 
     def warmup(self,train = True, normalize = True, test_tf = False):
         # reset env
@@ -337,6 +341,13 @@ class CRunner(Runner):
         overall_reward = []
         eval_num = self.eval_envs.get_eval_num()
 
+        penalty_cost_all=0
+        ordering_cost_all=0
+        holding_cost_all=0
+        shipping_cost_all=0
+        shipping_cost_pure=0
+        ordering_times=0
+
         for eval_index in range(eval_num):
             eval_obs, eval_obs_critic = self.eval_envs.reset(test_tf,self.all_args.norm_input)
             
@@ -418,13 +429,23 @@ class CRunner(Runner):
                 eval_rnn_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
                 eval_masks = np.ones((self.all_args.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
                 eval_masks[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
-                    
+
+                # 统计不同cost
+                for a in range(self.num_agents):
+                    penalty_cost_all+=eval_infos[0][a]['penalty_cost']
+                    ordering_cost_all+=eval_infos[0][a]['ordering_cost']
+                    holding_cost_all+=eval_infos[0][a]['holding_cost']
+                    shipping_cost_all+=eval_infos[0][a]['shipping_cost_all']
+                    shipping_cost_pure+=eval_infos[0][a]['shipping_cost_pure']
+                    if eval_step == self.episode_length-1:
+                        ordering_times += eval_infos[0][a]['ordering_times']
 
                 # 写入tensorboard
                 if eval_index<3:
                     for agent_id in range(self.num_involver):
                         self.writter.add_scalars(main_tag='{eval_or_test}_{eval_index}/Execution_{agent_id}'.format(eval_or_test='test' if test_tf else 'eval',eval_index=eval_index,agent_id=agent_id),
                                                 tag_scalar_dict=eval_infos[0][agent_id],global_step= eval_step)
+            
             rewards_log=np.array(rewards_log).reshape((self.episode_length,self.num_involver))
             if eval_index<3:
                 eval_returns=np.zeros((self.episode_length + 1,self.num_involver), dtype=np.float32)
@@ -439,7 +460,8 @@ class CRunner(Runner):
                                                         tag_scalar_dict={'est_V': est_V,
                                                                         'real_V': eval_returns[step][agent_id],},
                                                                         global_step= step)
-        bw_res = self.eval_envs.get_eval_bw_res()
+        num_all= eval_num*self.episode_length*self.num_agents
+        dict_cost={"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/eval_num/self.num_agents}
         all_demand_mean=self.demand_mean_test if test_tf else self.demand_mean_val
         norm_reward_drift = self.all_args.reward_norm_multiplier*all_demand_mean if 'norm' in self.all_args.reward_type else 0 
-        return np.mean(overall_reward)-norm_reward_drift, bw_res
+        return np.mean(overall_reward)-norm_reward_drift, dict_cost

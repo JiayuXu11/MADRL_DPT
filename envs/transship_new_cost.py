@@ -52,6 +52,8 @@ class Env(object):
         # The following three memeber variables must be defined
         self.agent_num = AGENT_NUM
         self.lead_time = args.lead_time
+        self.demand_info_for_critic=args.demand_info_for_critic
+
         # actor_obs
         self.instant_info_sharing=args.instant_info_sharing
         self.obs_transship=args.obs_transship
@@ -68,6 +70,7 @@ class Env(object):
         self.alpha = args.alpha
         self.ratio_transsship = args.ratio_transship
         self.gamma = args.gamma
+
 
         # transship收益分配
         self.transship_revenue_method = args.transship_revenue_method
@@ -183,7 +186,9 @@ class Env(object):
         return base_dim+transship_dim_dict[self.obs_transship]*transship_dim + step_dim
     
     def get_critic_obs_dim(self, info_sharing, obs_step):
-        demand_dim = 4*self.agent_num if info_sharing else 4
+        demand_info_num = len(self.demand_info_for_critic)
+        demand_info_num = demand_info_num + 4 if 'quantile' in self.demand_info_for_critic else 0 
+        demand_dim = demand_info_num*self.agent_num if info_sharing else 4
         return self.get_obs_dim(info_sharing, obs_step) + demand_dim
 
 
@@ -209,6 +214,12 @@ class Env(object):
         self.reward_selfish_cum = [0 for i in range(AGENT_NUM)]
         self.reward = [0 for i in range(AGENT_NUM)]
         self.reward_cum = [0 for i in range(AGENT_NUM)]
+        self.shipping_cost_all = [0 for i in range(AGENT_NUM)]
+        self.ordering_cost = [0 for i in range(AGENT_NUM)]
+        self.penalty_cost = [0 for i in range(AGENT_NUM)]
+        self.holding_cost = [0 for i in range(AGENT_NUM)]
+        self.ordering_times = [0 for i in range(AGENT_NUM)]
+        self.shipping_amount = [0 for i in range(AGENT_NUM)]
 
 
         #============================================================================
@@ -228,8 +239,7 @@ class Env(object):
 
         # 统计需求的mean和std        
         self.set_demand_statistics()
-        self.demand_mean=[np.mean([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
-        self.demand_std=[np.std([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
+        
 
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) 
         critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
@@ -251,6 +261,13 @@ class Env(object):
             info_dict['reward_selfish_cum'] = self.reward_selfish_cum[agent_id]
             info_dict['reward'] = self.reward[agent_id]
             info_dict['reward_cum'] = self.reward_cum[agent_id]
+
+            info_dict['shipping_amount'] = self.shipping_amount[agent_id]
+            info_dict['shipping_cost'] = self.shipping_cost_all[agent_id]
+            info_dict['penalty_cost'] = self.penalty_cost[agent_id]
+            info_dict['holding_cost'] = self.holding_cost[agent_id]
+            info_dict['ordering_times'] = self.ordering_times[agent_id]
+            info_dict['ordering_cost'] = self.ordering_cost[agent_id]
             
             infos.append(info_dict)
         return infos
@@ -435,9 +452,16 @@ class Env(object):
     # 统计需求均值与标准差，以供critic network使用
     def set_demand_statistics(self):
         if self.step_num<self.episode_max_steps:  
+            self.demand_mean=[np.mean([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
+            self.demand_std=[np.std([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
             self.demand_mean_dy=[np.mean([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))]) for demand in self.demand_list]
             self.demand_std_dy=[np.std([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))]) for demand in self.demand_list]
-
+            self.demand_q5=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.05) for demand in self.demand_list]
+            self.demand_q25=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.25) for demand in self.demand_list]
+            self.demand_q50=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.5) for demand in self.demand_list]
+            self.demand_q75=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.75) for demand in self.demand_list]
+            self.demand_q95=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.95) for demand in self.demand_list]
+            
     # critic network 专属obs
     def get_step_obs_critic(self, info_sharing, obs_step):
         actor_agent_obs = self.get_step_obs(info_sharing, obs_step)
@@ -446,15 +470,19 @@ class Env(object):
         for i in range(self.agent_num):
             actor_arr = actor_agent_obs[i]
             if info_sharing:
-                demand_mean_arr = np.array(self.demand_mean  + self.demand_mean_dy)
-                demand_std_arr = np.array(self.demand_std + self.demand_std_dy)
+                demand_mean_arr = (self.demand_mean if 'all_mean' in self.demand_info_for_critic else []) + (self.demand_mean_dy if 'mean' in self.demand_info_for_critic else [])
+                demand_mean_arr = np.array(demand_mean_arr)
+                demand_quantile_arr = (self.demand_q5+self.demand_q25+self.demand_q50+self.demand_q75+self.demand_q95) if 'quantile' in self.demand_info_for_critic else [] 
+                demand_quantile_arr = np.array(demand_quantile_arr)
+                demand_std_arr = (self.demand_std if 'all_std' in self.demand_info_for_critic else []) + (self.demand_std_dy if 'std' in self.demand_info_for_critic else [])
+                demand_std_arr = np.array(demand_std_arr)
             else:
                 demand_mean_arr = np.array([self.demand_mean[i],self.demand_mean_dy[i]])
                 demand_std_arr = np.array([self.demand_std[i] + self.demand_std_dy[i]])
             if(self.normalize):
-                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1.])
+                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1])
             else:
-                arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr])
+                arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr])
             sub_agent_obs.append(arr)
 
         return sub_agent_obs
@@ -593,8 +621,8 @@ class Env(object):
 
             # 最后一天将仓库内剩余货品按成本价折算
             if self.step_num > EPISODE_LEN-1:
-                reward=reward+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
-                reward_before=reward_before+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
+                reward=reward+(C[i])*max(inv_start-cur_demand[i],0)
+                reward_before=reward_before+(C[i])*max(inv_start-cur_demand[i],0)
             rewards_after.append(reward)
             rewards_before.append(reward_before)
 

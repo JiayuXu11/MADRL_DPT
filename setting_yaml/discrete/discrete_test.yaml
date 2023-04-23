@@ -2,7 +2,7 @@ algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
 experiment_name: 'discrete_local'
 
 # basic setting
-model_dir:  "C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/setting_yaml/error_model/ratio05"
+model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/setting_yaml/error_model/ratio05"
 n_rollout_threads: 100
 num_env_steps: 300000000
 num_agents: 3
@@ -57,5 +57,5 @@ alpha: 0.7
 ratio_transship: False
 instant_info_sharing: False
 central_controller: False
-
+demand_info_for_critic: ['mean','all_mean','quantile','std']
 

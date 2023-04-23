@@ -43,6 +43,7 @@ if __name__ == "__main__":
     # all_args.central_controller =True
 
 
+
     seeds = all_args.seed
 
     print("all config: ", all_args)
@@ -118,11 +119,16 @@ if __name__ == "__main__":
             # run experiments
             runner = Runner(config)
 
-            eval_reward, test_reward = runner.run()
+            eval_reward,eval_dict, test_reward,test_dict = runner.run()
 
             with open(seed_res_record_file, 'a+') as f:
-                f.write(str(all_args.std_y_coef)+'   '+str(seed) + ' ' + str(eval_reward) + ' ' + str(test_reward))
+                f.write(str(seed) + 'eval_cost' + str(eval_reward) + 'test_cost' + str(test_reward))
                 f.write('\n')
+                f.write('eval_cost_composition' + str(eval_dict) )
+                f.write('\n')
+                f.write('test_cost_composition' + str(test_dict) )
+                f.write('\n')
+                
             if not all_args.entropy_decrease:
                 break
             if all_args.action_type == 'continue':
