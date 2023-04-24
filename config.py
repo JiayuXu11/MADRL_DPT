@@ -286,5 +286,5 @@ def get_config():
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
     
     parser.add_argument("--demand_info_for_critic", type=str, 
-                        default=["mean",'std'], choices=['all_mean','all_std','mean','std','quantile'],help="给critic network披露的未来需求信息")
+                        default=['all_mean','all_std','mean','std'], choices=['all_mean','all_std','mean','std','quantile'],help="给critic network披露的未来需求信息")
     return parser
