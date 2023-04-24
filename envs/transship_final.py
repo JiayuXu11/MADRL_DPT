@@ -207,8 +207,8 @@ class Env(object):
     
     def get_critic_obs_dim(self, info_sharing, obs_step):
         demand_info_num = len(self.demand_info_for_critic)
-        demand_info_num = demand_info_num + 4 if 'quantile' in self.demand_info_for_critic else 0 
-        demand_dim = demand_info_num*self.agent_num if info_sharing else 4
+        demand_info_num = demand_info_num + (4 if 'quantile' in self.demand_info_for_critic else 0 )
+        demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
         return self.get_obs_dim(info_sharing, obs_step) + demand_dim
 
 
