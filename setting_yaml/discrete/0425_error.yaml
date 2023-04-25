@@ -3,7 +3,7 @@ experiment_name: '0425_err'
 
 # basic setting
 model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
-n_rollout_threads: 300
+n_rollout_threads: 3
 num_env_steps: 300000000
 num_agents: 3
 eval_interval: 20

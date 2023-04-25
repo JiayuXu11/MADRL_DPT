@@ -29,32 +29,32 @@ class CRunner(Runner):
 
         for episode in range(episodes):
             
-            # if episode % self.eval_interval == 0 and self.use_eval:
-            #     re, dict_write = self.eval()
-            #     dict_write.update({'return':re})
-            #     self.writter.add_scalars('cost_graph', dict_write, episode)
-            #     print("Eval average cost: ", re, " Eval cost composition: ", dict_write)
-            #     print("Best Eval average cost(before): ", best_reward)
-            #     # test_reward,_=self.eval(test_tf=True)
-            #     # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
-            #     if(re > best_reward):
-            #         if episode > 0:
-            #             self.save()
-            #             print("A better model is saved!")
+            if episode % self.eval_interval == 0 and self.use_eval:
+                re, dict_write = self.eval()
+                dict_write.update({'return':re})
+                self.writter.add_scalars('cost_graph', dict_write, episode)
+                print("Eval average cost: ", re, " Eval cost composition: ", dict_write)
+                print("Best Eval average cost(before): ", best_reward)
+                # test_reward,_=self.eval(test_tf=True)
+                # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
+                if(re > best_reward):
+                    if episode > 0:
+                        self.save()
+                        print("A better model is saved!")
                     
-            #         best_reward = re
-            #         best_dict_write = dict_write
-            #         record = 0
-            #     elif(episode > self.n_warmup_evaluations):
-            #         record += 1
-            #         if(record == self.n_no_improvement_thres):
-            #             print("Training finished because of no imporvement for " + str(self.n_no_improvement_thres) + " evaluations")
-            #             self.model_dir=str(self.run_dir / 'models')
-            #             self.restore()
-            #             test_reward,dict_write_test=self.eval(test_tf=True)
-            #             print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
-            #             return best_reward,best_dict_write, test_reward, dict_write_test
-            #     # break
+                    best_reward = re
+                    best_dict_write = dict_write
+                    record = 0
+                elif(episode > self.n_warmup_evaluations):
+                    record += 1
+                    if(record == self.n_no_improvement_thres):
+                        print("Training finished because of no imporvement for " + str(self.n_no_improvement_thres) + " evaluations")
+                        self.model_dir=str(self.run_dir / 'models')
+                        self.restore()
+                        test_reward,dict_write_test=self.eval(test_tf=True)
+                        print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
+                        return best_reward,best_dict_write, test_reward, dict_write_test
+                # break
 
             self.warmup(train = True, normalize = self.all_args.norm_input, test_tf = False)
             if self.use_linear_lr_decay:
