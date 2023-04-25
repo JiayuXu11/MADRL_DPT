@@ -24,6 +24,7 @@ class SeparatedReplayBuffer(object):
         self._use_proper_time_limits = args.use_proper_time_limits
         self.critic_learning_pure_returns = args.critic_learning_pure_returns
         self.train_episode_length = args.train_episode_length
+        self.setting_time_end = args.setting_time_end
 
 
 
@@ -129,6 +130,8 @@ class SeparatedReplayBuffer(object):
         """
         use proper time limits, the difference of use or not is whether use bad_mask
         """
+        if self.setting_time_end:
+            next_value = 0
         if self._use_proper_time_limits:
             if self._use_gae:
                 self.value_preds[-1] = next_value

@@ -287,4 +287,7 @@ def get_config():
     
     parser.add_argument("--demand_info_for_critic", type=str, 
                         default=['all_mean','all_std','mean','std'], choices=['all_mean','all_std','mean','std','quantile'],help="给critic network披露的未来需求信息")
+    
+    parser.add_argument("--setting_time_end", type=t_or_f, 
+                        default=True, help="当时间超过episode_length时,之后的收益是否考虑")
     return parser
