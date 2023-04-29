@@ -230,6 +230,7 @@ class Env(object):
 
         # info
         self.inventory_start = [S_I for i in range(self.agent_num)]
+        self.demand_fulfilled = [0 for i in range(self.agent_num)]
         self.shortage = [0 for i in range(self.agent_num)]
         self.reward_selfish = [0 for i in range(self.agent_num)]
         self.reward_selfish_cum = [0 for i in range(self.agent_num)]
@@ -277,6 +278,7 @@ class Env(object):
             info_dict['order'] = self.order[agent_id][-1]
             info_dict['transship']=self.transship_request[agent_id]
             info_dict['transship_intend']=self.transship_intend[agent_id]
+            info_dict['demand_fulfilled'] = self.demand_fulfilled[agent_id]
             info_dict['shortage'] = self.shortage[agent_id]
             info_dict['reward_selfish'] = self.reward_selfish[agent_id]
             info_dict['reward_selfish_cum'] = self.reward_selfish_cum[agent_id]
@@ -623,7 +625,8 @@ class Env(object):
             
             # transship前的reward
             reward_before= -C[i]*(action[i][0])-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)+revenue_demand+norm_drift
-
+            
+            self.demand_fulfilled[i] =  min(inv_start,cur_demand[i])
             self.shortage[i]=cur_demand[i]-inv_start
             self.inventory[i]=max(inv_start-cur_demand[i],0.)
             self.action_history[i].append(action[i])
