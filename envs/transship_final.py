@@ -55,7 +55,13 @@ class Env(object):
         self.agent_num = args.num_involver
         self.lead_time = args.lead_time
         self.demand_info_for_critic=args.demand_info_for_critic
-
+        
+        self.distance = DISTANCE
+        # 考不考虑distance不同问题
+        self.homo_distance=args.homo_distance
+        if self.homo_distance:
+            self.distance = np.array([[0,1000,1000,1000,1000],[1000,0,1000,1000,1000],[1000,1000,0,1000,1000],[1000,1000,1000,0,1000],[1000,1000,1000,1000,0]])
+        
         # actor_obs
         self.instant_info_sharing=args.instant_info_sharing
         self.obs_transship=args.obs_transship
@@ -70,8 +76,8 @@ class Env(object):
         self.action_dim = ACTION_DIM_DICT[self.action_type]
         
         # transship顺序
-        self.shipping_order = self.get_shipping_order(DISTANCE)
-        self.shipping_cost_matrix = self.phi(DISTANCE)
+        self.shipping_order = self.get_shipping_order(self.distance)
+        self.shipping_cost_matrix = self.phi(self.distance)
 
         self.alpha = args.alpha
         self.ratio_transsship = args.ratio_transship
@@ -393,15 +399,18 @@ class Env(object):
         
         self.transship_intend=transship_amounts.copy()
 
-        for a1,a2 in self.shipping_order:
-            if a1<self.agent_num and a2<self.agent_num:
-                # 表示一个想要货，一个想出货
-                if transship_amounts[a1]*transship_amounts[a2]<0:
-                    tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
-                    self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
-                    self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
-                    transship_amounts[a1]-=self.transship_matrix[a1][a2]
-                    transship_amounts[a2]-=self.transship_matrix[a2][a1]
+        if self.homo_distance:
+            self.transship_merge_homo(transship_amounts)
+        else:
+            for a1,a2 in self.shipping_order:
+                if a1<self.agent_num and a2<self.agent_num:
+                    # 表示一个想要货，一个想出货
+                    if transship_amounts[a1]*transship_amounts[a2]<0:
+                        tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
+                        self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
+                        self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
+                        transship_amounts[a1]-=self.transship_matrix[a1][a2]
+                        transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
         # 最后几天订的货，因为leadtime原因也到不了
         if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
@@ -411,7 +420,44 @@ class Env(object):
 
         return mapped_actions
     
+    # homo distance下的撮合机制 
+    def transship_merge_homo(self,transship_amounts):
+        # 撮合transship
+        # ## 1. 按比例分配,和下面那个挨个砍一刀一起用才是完整版。效果不好，感觉还不如挨个砍一刀。
+        if self.ratio_transsship:
+            transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
+            transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
+            if sum(transship_amounts) < 0:
+                ratio = -transship_pos/transship_neg
+                for i in range(len(transship_amounts)):
+                    transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]<0 else transship_amounts[i]
+            elif sum(transship_amounts) > 0:
+                ratio = -transship_neg/transship_pos
+                for i in range(len(transship_amounts)):
+                    transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]>0 else transship_amounts[i]
+        # 2. 若仍未撮合成功，则挨个砍一刀
+        i=0
+        while(sum(transship_amounts) != 0):
+            if sum(transship_amounts) > 0:
+                if (transship_amounts[i] > 0):
+                    transship_amounts[i] += -1
+            elif sum(transship_amounts) < 0:
+                if (transship_amounts[i] < 0):
+                    transship_amounts[i] += 1
+            i+=1
+            i=0 if i > self.agent_num-1 else i
+        
+        # 转换为transship_matrix格式
+        for a1 in range(self.agent_num):
+            for a2 in range(self.agent_num):
+                if transship_amounts[a1]*transship_amounts[a2]<0:
+                    tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
+                    self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
+                    self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
+                    transship_amounts[a1]-=self.transship_matrix[a1][a2]
+                    transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
+        
     def get_step_obs(self, info_sharing, obs_step):
         """
         - Need to be implemented
@@ -526,7 +572,7 @@ class Env(object):
             - rewards: list, rewards for each actors (typically one-period costs for all actors)
         """
         all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
-        cur_demand = [self.demand_list[0][self.step_num], self.demand_list[1][self.step_num],self.demand_list[2][self.step_num]]
+        cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         rewards=[]
         self.step_num+=1
         for i in range(self.agent_num):
@@ -566,7 +612,7 @@ class Env(object):
     
     # transship的收益
     def get_transship_revenue(self,action):
-        cur_demand = [self.demand_list[0][self.step_num], self.demand_list[1][self.step_num],self.demand_list[2][self.step_num]]
+        cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         transship_revenue=[0 for i in range(self.agent_num)]
         transship_volume = 1e-10
         for i in range(self.agent_num):
@@ -592,7 +638,7 @@ class Env(object):
             - rewards: list, rewards for each actors (typically one-period costs for all actors)
         """
         all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
-        cur_demand = [self.demand_list[0][self.step_num], self.demand_list[1][self.step_num],self.demand_list[2][self.step_num]]
+        cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         rewards_after=[]
         rewards_before = []
         Vs = []

@@ -290,4 +290,8 @@ def get_config():
     
     parser.add_argument("--setting_time_end", type=t_or_f, 
                         default=True, help="当时间超过episode_length时,之后的收益是否考虑")
+    
+    parser.add_argument("--homo_distance", type=t_or_f, 
+                        default=False, help="是否认为零售商间距离一致")
+    
     return parser

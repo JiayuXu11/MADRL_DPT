@@ -5,9 +5,9 @@ DEMAND_MAX = 20
 EPISODE_LEN = 400
 num_eval = 30
 agent_num = 3
-np.random.seed(123)
-for agent in range(agent_num):
-    path='test_data/merton/{}'.format(agent)
+np.random.seed(0)
+for agent in range(agent_num,5):
+    path='eval_data/merton/{}'.format(agent)
     if not os.path.exists(path):
         os.makedirs(path)
     

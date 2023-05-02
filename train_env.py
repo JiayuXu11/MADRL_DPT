@@ -31,6 +31,8 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+    # all_args.num_agents=5
+    # all_args.homo_distance=True
     # all_args.algorithm_name='heuristic2'
     # all_args.action_type='continue'
     # all_args.norm_input =False
@@ -93,6 +95,11 @@ if __name__ == "__main__":
         all_args.clip_bound=[(1-all_args.clip_param),(1+all_args.clip_param)]
 
         num_agents = all_args.num_agents
+
+        # 使得num_involver（门店数量）与num_agents（训练agent数量）匹配
+        all_args.num_involver = max(num_agents,all_args.num_involver)
+        num_agents =  max(num_agents,all_args.num_involver)
+
         if all_args.central_controller:
             num_agents = 1
             all_args.instant_info_sharing=True
