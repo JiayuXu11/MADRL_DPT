@@ -31,6 +31,7 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+    # all_args.generator_method='shanshu'
     # all_args.num_agents=5
     # all_args.homo_distance=True
     # all_args.algorithm_name='heuristic2'

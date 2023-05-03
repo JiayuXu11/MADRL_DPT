@@ -279,7 +279,9 @@ def get_config():
                         default=2.4, help="使reward均值为0而添加在当期demand上的系数")
    #  parser.add_argument("--demand_mean_val", type=float, 
    #                      default=9.478111111111112, help="验证集需求的平均数")
-    
+   
+    parser.add_argument("--generator_method", type=str, 
+                        default="merton",choices=['merton','uniform','poisson','normal','shanshu'], help="数据生成的方法")
     parser.add_argument("--eval_dir", type=str, 
                         default="./eval_data/merton", help="验证集目录(./xx/xx的格式)")
     parser.add_argument("--test_dir", type=str, 

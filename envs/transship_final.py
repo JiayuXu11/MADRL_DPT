@@ -2,6 +2,7 @@ import numpy as np
 from . import generator
 import os 
 import random
+import chardet
 #====================================================================================
 # Define all the exogenous parameters you need in your supply chain environment here.
 # They may include:
@@ -56,6 +57,7 @@ class Env(object):
         self.lead_time = args.lead_time
         self.demand_info_for_critic=args.demand_info_for_critic
         
+        self.generator_method = args.generator_method
         self.distance = DISTANCE
         # 考不考虑distance不同问题
         self.homo_distance=args.homo_distance
@@ -132,15 +134,7 @@ class Env(object):
         return 0.0005*distance
     
     def get_eval_data(self):
-        """
-        - Need to be implemented
-        - Load local demand data for evaluation
-        - Inputs:
-            - Modify the inputs as you need
-        - Outputs:
-            - n_eval: int, number of demand sequences (also number of episodes in one evaluation)
-            - eval_data: list, demand data for evaluation
-        """
+        
         files_0 = os.listdir(self.eval_path[0])
         n_eval = len(files_0)
         eval_data=[]
@@ -151,9 +145,13 @@ class Env(object):
                 files=os.listdir(self.eval_path[j])
                 data = []
                 with open(self.eval_path[j] + files[i], "rb") as f:
+                    d=f.read()
+                    encoding = chardet.detect(d)['encoding']
+
+                with open(self.eval_path[j] + files[i], "rb") as f:
                     lines = f.readlines()
                     for line in lines:
-                        data.append(int(line))
+                        data.append(float(line))
                 eval_data_i.append(data)
             eval_data.append(eval_data_i)
         # print(np.array(eval_data).shape)
@@ -179,9 +177,13 @@ class Env(object):
                 files=os.listdir(self.test_path[j])
                 data = []
                 with open(self.test_path[j] + files[i], "rb") as f:
+                    d=f.read()
+                    encoding = chardet.detect(d)['encoding']
+
+                with open(self.test_path[j] + files[i], "rb") as f:
                     lines = f.readlines()
                     for line in lines:
-                        data.append(int(line))
+                        data.append(float(line))
                 test_data_i.append(data)
             test_data.append(test_data_i)
         # print(np.array(test_data).shape)
@@ -196,8 +198,18 @@ class Env(object):
         - Outputs:
             - demand_list: list, one-episode demand data for training
         """
-        demand_list = [generator.merton(EPISODE_LEN, DEMAND_MAX) for _ in range(self.agent_num)]
+        if(self.generator_method=='merton'):
+            demand_list = [generator.merton(EPISODE_LEN, DEMAND_MAX), generator.merton(EPISODE_LEN, DEMAND_MAX),generator.merton(EPISODE_LEN, DEMAND_MAX)]
+        elif(self.generator_method=='poisson'):
+            demand_list=[generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX)]
+        elif(self.generator_method=='normal'):
+            demand_list=[generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX)]
+        elif(self.generator_method=='uniform'):
+            demand_list=[generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX)]
+        elif(self.generator_method=='shanshu'):
+             demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
         return demand_list
+
 
     def get_obs_dim(self, info_sharing, obs_step):
         base_dim = 2 + self.lead_time
