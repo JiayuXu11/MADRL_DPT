@@ -1,13 +1,13 @@
 algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
-experiment_name: '0425_err'
+experiment_name: '0503_error__'
 
 # basic setting
-model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
-n_rollout_threads: 3
+model_dir: "C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/0503_time_end_critic_pure_false/models" #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
+n_rollout_threads: 100
 num_env_steps: 300000000
 num_agents: 3
 eval_interval: 20
-n_no_improvement_thres: 30
+n_no_improvement_thres: 15
 gamma: 0.98
 
 # continue or discrete
@@ -53,8 +53,8 @@ use_gae: True
 gae_lambda: 0.95
 use_clipped_value_loss: True
 clip_param: 0.2
-critic_learning_pure_returns: True
-advantage_pure_returns: True
+critic_learning_pure_returns: False
+advantage_pure_returns: False
 
 # normalization
 sample_mean_advantage: True
@@ -66,6 +66,8 @@ max_grad_norm: 0.5
 
 
 instant_info_sharing: False
+setting_time_end: True
+demand_info_for_critic: ['all_mean','all_std','mean','std']
 
 
 
