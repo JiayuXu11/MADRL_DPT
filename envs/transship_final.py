@@ -64,6 +64,9 @@ class Env(object):
         if self.homo_distance:
             self.distance = np.array([[0,1000,1000,1000,1000],[1000,0,1000,1000,1000],[1000,1000,0,1000,1000],[1000,1000,1000,0,1000],[1000,1000,1000,1000,0]])
         
+        # 货到付款， 还是先钱后货
+        self.pay_first= args.pay_first
+
         # actor_obs
         self.instant_info_sharing=args.instant_info_sharing
         self.obs_transship=args.obs_transship
@@ -225,9 +228,11 @@ class Env(object):
     
     def get_critic_obs_dim(self, info_sharing, obs_step):
         demand_info_num = len(self.demand_info_for_critic)
-        demand_info_num = demand_info_num + (4 if 'quantile' in self.demand_info_for_critic else 0 )
+        demand_info_num = demand_info_num + (4 if 'quantile' in self.demand_info_for_critic else 0 )+((self.lead_time-1) if 'LT_all' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
-        return self.get_obs_dim(info_sharing, obs_step) + demand_dim
+        # critic的输入不包含当期需求
+        obs_diff = self.agent_num if info_sharing else 1
+        return self.get_obs_dim(info_sharing, obs_step) + demand_dim - obs_diff
 
 
     def reset(self, train = True, normalize = True, test_tf = False):
@@ -470,7 +475,7 @@ class Env(object):
                     transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
         
-    def get_step_obs(self, info_sharing, obs_step):
+    def get_step_obs(self, info_sharing, obs_step, demand_today=True):
         """
         - Need to be implemented
         - Get step obs (obs for each step)
@@ -488,10 +493,10 @@ class Env(object):
         for i in range(self.agent_num):
 
             if info_sharing:
-                base_arr = np.array(self.inventory + [self.demand_list[k][self.step_num-1] for k in range(self.agent_num)])
+                base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else 10) for k in range(self.agent_num)] if demand_today else []))
                 order_arr = np.array(order_all)
             else:
-                base_arr = np.array([self.inventory[i],self.demand_list[i][self.step_num-1]])
+                base_arr = np.array([self.inventory[i],(self.demand_list[i][self.step_num-1] if self.step_num>0 else 10) ]) if demand_today else np.array([self.inventory[i]])
                 order_arr = np.array(self.order[i])
             if self.obs_transship == 'no_transship' or info_sharing:
                 transship_arr = np.array([])
@@ -528,11 +533,17 @@ class Env(object):
             self.demand_q75=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.75) for demand in self.demand_list]
             self.demand_q95=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.95) for demand in self.demand_list]
             
+            self.demand_LT = [[(demand[idx] if idx<self.episode_max_steps else 0 )for idx in range(self.step_num,self.step_num+self.lead_time)] for demand in self.demand_list]
+            self.demand_LT_all_helper=[]
+            for lt_d in self.demand_LT:
+                self.demand_LT_all_helper +=lt_d
+
     # critic network 专属obs
     def get_step_obs_critic(self, info_sharing, obs_step):
-        actor_agent_obs = self.get_step_obs(info_sharing, obs_step)
+        actor_agent_obs = self.get_step_obs(info_sharing, obs_step, False)
         self.set_demand_statistics()
         sub_agent_obs = []
+
         for i in range(self.agent_num):
             actor_arr = actor_agent_obs[i]
             if info_sharing:
@@ -542,13 +553,15 @@ class Env(object):
                 demand_quantile_arr = np.array(demand_quantile_arr)
                 demand_std_arr = (self.demand_std if 'all_std' in self.demand_info_for_critic else []) + (self.demand_std_dy if 'std' in self.demand_info_for_critic else [])
                 demand_std_arr = np.array(demand_std_arr)
+                demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + ([np.mean(d) for d in self.demand_LT] if 'LT_mean' in self.demand_info_for_critic else [])
+                demand_LT_arr = np.array(demand_LT_arr)
             else:
                 demand_mean_arr = np.array([self.demand_mean[i],self.demand_mean_dy[i]])
                 demand_std_arr = np.array([self.demand_std[i] + self.demand_std_dy[i]])
             if(self.normalize):
-                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1])
+                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1])
             else:
-                arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr])
+                arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr, demand_LT_arr])
             sub_agent_obs.append(arr)
 
         return sub_agent_obs
@@ -674,15 +687,15 @@ class Env(object):
             # 运费+买卖货的费用
             self.shipping_cost_all[i] = self.shipping_cost_pure[i] + C[i]*(action[i][1])
 
-            self.ordering_cost[i] = C[i]*(action[i][0])+FIXED_COST*(1 if action[i][0]>0 else 0)
-            self.ordering_times[i]+=(1 if action[i][0]>0 else 0)
+            self.ordering_cost[i] = (C[i]*(action[i][0])+FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (C[i]*(self.order[i][0])+FIXED_COST*(1 if self.order[i][0]>0 else 0))
+            self.ordering_times[i]+=(1 if action[i][0]>0 else 0) if self.pay_first else (1 if self.order[i][0]>0 else 0)
             self.penalty_cost[i] = -P[i]*min(inv_start-cur_demand[i],0)
             self.holding_cost[i] = H[i]*max(inv_start-cur_demand[i],0)
             # transship 后的reward 
             reward= -self.ordering_cost[i]-self.shipping_cost_all[i]-self.holding_cost[i]-self.penalty_cost[i]+revenue_demand+norm_drift
             
             # transship前的reward
-            reward_before= -C[i]*(action[i][0])-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)+revenue_demand+norm_drift
+            reward_before= -self.ordering_cost[i]-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)+revenue_demand+norm_drift
             
             self.demand_fulfilled[i] =  min(inv_start,cur_demand[i])
             self.shortage[i]=cur_demand[i]-inv_start

@@ -211,10 +211,10 @@ def get_config():
     parser.add_argument("--central_controller", type=t_or_f, 
                         default=False, help="是否全部采用中央控制")
 
-    parser.add_argument("--yaml_path", type=str, 
-                        default='setting_yaml/discrete/0425_error.yaml', help="yaml的路径")
    #  parser.add_argument("--yaml_path", type=str, 
-   #                      default=None, help="yaml的路径")
+   #                      default='setting_yaml/discrete/0425_error.yaml', help="yaml的路径")
+    parser.add_argument("--yaml_path", type=str, 
+                        default=None, help="yaml的路径")
     
     parser.add_argument("--sample_mean_advantage", type=t_or_f, 
                         default=True, help="是否对advantage采用sample_mean_advantage")
@@ -288,12 +288,15 @@ def get_config():
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
     
     parser.add_argument("--demand_info_for_critic", type=str, 
-                        default=['all_mean','all_std','mean','std'], choices=['all_mean','all_std','mean','std','quantile'],help="给critic network披露的未来需求信息")
+                        default=['all_mean','all_std','mean','std'], choices=['all_mean','all_std','mean','std','quantile','LT_mean','LT_all'],help="给critic network披露的未来需求信息")
     
     parser.add_argument("--setting_time_end", type=t_or_f, 
                         default=True, help="当时间超过episode_length时,之后的收益是否考虑")
     
     parser.add_argument("--homo_distance", type=t_or_f, 
                         default=False, help="是否认为零售商间距离一致")
+    
+    parser.add_argument("--pay_first", type=t_or_f, 
+                        default=True, help="若为True, 则订货时付钱, False则到货到了再付钱")
     
     return parser

@@ -31,6 +31,9 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+
+    # all_args.demand_info_for_critic=['all_mean','all_std','mean','std','quantile','LT_mean','LT_all']
+    # all_args.pay_first= False
     # all_args.generator_method='shanshu'
     # all_args.num_agents=5
     # all_args.homo_distance=True
