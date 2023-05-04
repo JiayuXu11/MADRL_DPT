@@ -493,10 +493,10 @@ class Env(object):
         for i in range(self.agent_num):
 
             if info_sharing:
-                base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else 10) for k in range(self.agent_num)] if demand_today else []))
+                base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else DEMAND_MAX/2) for k in range(self.agent_num)] if demand_today else []))
                 order_arr = np.array(order_all)
             else:
-                base_arr = np.array([self.inventory[i],(self.demand_list[i][self.step_num-1] if self.step_num>0 else 10) ]) if demand_today else np.array([self.inventory[i]])
+                base_arr = np.array([self.inventory[i],(self.demand_list[i][self.step_num-1] if self.step_num>0 else DEMAND_MAX/2) ]) if demand_today else np.array([self.inventory[i]])
                 order_arr = np.array(self.order[i])
             if self.obs_transship == 'no_transship' or info_sharing:
                 transship_arr = np.array([])
