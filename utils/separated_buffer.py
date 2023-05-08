@@ -13,8 +13,8 @@ class SeparatedReplayBuffer(object):
     def __init__(self, args, obs_space, share_obs_space, act_space):
         self.episode_length = args.episode_length
         self.n_rollout_threads = args.n_rollout_threads
-        self.hidden_size = args.hidden_size
-        self.hidden_size_critic =args.hidden_size_critic
+        self.hidden_size = args.hidden_size[-1] if isinstance(args.hidden_size,list) else args.hidden_size
+        self.hidden_size_critic =args.hidden_size_critic[-1] if isinstance(args.hidden_size_critic,list) else args.hidden_size_critic
         self.recurrent_N = args.recurrent_N
         self.gamma = args.gamma
         self.gae_lambda = args.gae_lambda

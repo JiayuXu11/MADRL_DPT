@@ -17,12 +17,12 @@ class MLPLayer(nn.Module):
             return init(m, init_method, lambda x: nn.init.constant_(x, 0), gain=gain)
 
         self.fc1 = nn.Sequential(
-            init_(nn.Linear(input_dim, hidden_size)), active_func, nn.LayerNorm(hidden_size))
+            init_(nn.Linear(input_dim, hidden_size[0])), active_func, nn.LayerNorm(hidden_size[0]))
         # self.fc_h = nn.Sequential(init_(
         #     nn.Linear(hidden_size, hidden_size)), active_func, nn.LayerNorm(hidden_size))
         # self.fc2 = get_clones(self.fc_h, self._layer_N)
         self.fc2 = nn.ModuleList([nn.Sequential(init_(
-            nn.Linear(hidden_size, hidden_size)), active_func, nn.LayerNorm(hidden_size)) for i in range(self._layer_N)])
+            nn.Linear(hidden_size[i], hidden_size[i+1])), active_func, nn.LayerNorm(hidden_size[i+1])) for i in range(self._layer_N)])
 
     def forward(self, x):
         x = self.fc1(x)
@@ -35,7 +35,7 @@ class MLPLayer(nn.Module):
 
 
 class MLPBase(nn.Module):
-    def __init__(self, args, obs_shape, hidden_size, cat_self=True, attn_internal=False):
+    def __init__(self, args, obs_shape, hidden_size, cat_self=False, attn_internal=False):
         super(MLPBase, self).__init__()
 
         self._use_feature_normalization = args.use_feature_normalization
@@ -44,19 +44,32 @@ class MLPBase(nn.Module):
         self._stacked_frames = args.stacked_frames
         self._layer_N = args.layer_N
         self.hidden_size = hidden_size
-
+        self.cat_self = cat_self
         obs_dim = obs_shape[0]
 
-        if self._use_feature_normalization:
+        if self.cat_self:
             self.feature_norm = nn.LayerNorm(obs_dim)
+            obs_dim = 2*obs_dim
+
+        # if self._use_feature_normalization:
+        #     self.feature_norm = nn.LayerNorm(obs_dim)
 
         self.mlp = MLPLayer(obs_dim, self.hidden_size,
                               self._layer_N, self._use_orthogonal, self._use_ReLU)
 
     def forward(self, x):
-        if self._use_feature_normalization:
+
+        if self.cat_self:
+            norm_x = self.feature_norm(x)
+            x= torch.cat((x,norm_x),-1)
+        elif self._use_feature_normalization:
             x = self.feature_norm(x)
+        
 
         x = self.mlp(x)
+
+
+
+        # x = self.mlp(x)
 
         return x

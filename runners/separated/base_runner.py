@@ -34,8 +34,8 @@ class Runner(object):
         self.n_rollout_threads = self.all_args.n_rollout_threads
         self.n_eval_rollout_threads = self.all_args.n_eval_rollout_threads
         self.use_linear_lr_decay = self.all_args.use_linear_lr_decay
-        self.hidden_size_critic = self.all_args.hidden_size_critic
-        self.hidden_size = self.all_args.hidden_size
+        self.hidden_size_critic = self.all_args.hidden_size_critic[-1] if isinstance(self.all_args.hidden_size_critic,list) else self.all_args.hidden_size_critic
+        self.hidden_size = self.all_args.hidden_size[-1] if isinstance(self.all_args.hidden_size,list) else self.all_args.hidden_size
         self.use_render = self.all_args.use_render
         self.recurrent_N = self.all_args.recurrent_N
         self.use_single_network = self.all_args.use_single_network

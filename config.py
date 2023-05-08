@@ -299,4 +299,9 @@ def get_config():
     parser.add_argument("--pay_first", type=t_or_f, 
                         default=True, help="若为True, 则订货时付钱, False则到货到了再付钱")
     
+
+    parser.add_argument("--cat_self", type=t_or_f, 
+                        default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
+    parser.add_argument("--cat_self_critic", type=t_or_f, 
+                        default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
     return parser

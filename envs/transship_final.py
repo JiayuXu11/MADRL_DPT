@@ -230,9 +230,10 @@ class Env(object):
         demand_info_num = len(self.demand_info_for_critic)
         demand_info_num = demand_info_num + (4 if 'quantile' in self.demand_info_for_critic else 0 )+((self.lead_time-1) if 'LT_all' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
+        patial_info_sharing_dim = self.agent_num-1 if not info_sharing else 0
         # critic的输入不包含当期需求
         obs_diff = self.agent_num if info_sharing else 1
-        return self.get_obs_dim(info_sharing, obs_step) + demand_dim - obs_diff
+        return self.get_obs_dim(info_sharing, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
 
 
     def reset(self, train = True, normalize = True, test_tf = False):
@@ -544,6 +545,8 @@ class Env(object):
         self.set_demand_statistics()
         sub_agent_obs = []
 
+        actor_leadtime_resid=[self.inventory[i]+sum(self.order[i])-sum(self.demand_LT[i]) for i in range(self.agent_num)]
+
         for i in range(self.agent_num):
             actor_arr = actor_agent_obs[i]
             if info_sharing:
@@ -555,11 +558,22 @@ class Env(object):
                 demand_std_arr = np.array(demand_std_arr)
                 demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + ([np.mean(d) for d in self.demand_LT] if 'LT_mean' in self.demand_info_for_critic else [])
                 demand_LT_arr = np.array(demand_LT_arr)
+                other_actor_arr = np.array([])
             else:
-                demand_mean_arr = np.array([self.demand_mean[i],self.demand_mean_dy[i]])
-                demand_std_arr = np.array([self.demand_std[i] + self.demand_std_dy[i]])
+                demand_mean_arr = ([self.demand_mean[i]] if 'all_mean' in self.demand_info_for_critic else []) + ([self.demand_mean_dy[i]] if 'mean' in self.demand_info_for_critic else [])
+                demand_mean_arr = np.array(demand_mean_arr)
+                demand_quantile_arr = [self.demand_q5[i],self.demand_q25[i],self.demand_q50[i],self.demand_q75[i],self.demand_q95[i]] if 'quantile' in self.demand_info_for_critic else [] 
+                demand_quantile_arr = np.array(demand_quantile_arr)
+                demand_std_arr = ([self.demand_std[i]] if 'all_std' in self.demand_info_for_critic else []) + ([self.demand_std_dy[i]] if 'std' in self.demand_info_for_critic else [])
+                demand_std_arr = np.array(demand_std_arr)
+                demand_LT_arr = (self.demand_LT[i] if 'LT_all' in self.demand_info_for_critic else []) + ([np.mean(self.demand_LT[i]) ] if 'LT_mean' in self.demand_info_for_critic else [])
+                demand_LT_arr = np.array(demand_LT_arr)
+                other_actor_arr = actor_leadtime_resid[:i]+actor_leadtime_resid[i+1:]
+                other_actor_arr = np.array(other_actor_arr)
+
+
             if(self.normalize):
-                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1])
+                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1, other_actor_arr*2/DEMAND_MAX-1])
             else:
                 arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr, demand_LT_arr])
             sub_agent_obs.append(arr)

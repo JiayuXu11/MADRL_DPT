@@ -34,6 +34,9 @@ if __name__ == "__main__":
     all_args.train_episode_length=all_args.episode_length-all_args.lead_time-1
 
 
+    # all_args.cat_self=True
+    # all_args.hidden_size = [64,128,256,256]
+    # all_args.use_centralized_V=False
     # all_args.demand_info_for_critic=['all_mean','all_std','mean','std','quantile','LT_mean','LT_all']
     # all_args.pay_first= False
     # all_args.generator_method='shanshu'
