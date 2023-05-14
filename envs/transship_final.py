@@ -235,7 +235,7 @@ class Env(object):
         # demand_info_num = len(self.demand_info_for_critic)
         demand_info_num = (5 if 'quantile' in self.demand_info_for_critic else 0 )+(self.lead_time if 'LT_all' in self.demand_info_for_critic else 0 )+(1 if 'LT_mean' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
-        patial_info_sharing_dim = self.agent_num-1 if not info_sharing else 0
+        patial_info_sharing_dim = self.agent_num*2 if not info_sharing else 0
         # critic的输入不包含当期需求
         obs_diff = self.agent_num if info_sharing else 1
         return self.get_obs_dim(info_sharing, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff

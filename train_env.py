@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # all_args.cat_self=True
     # all_args.hidden_size = [64,128,256,256]
-    # all_args.use_centralized_V=False
+    all_args.use_centralized_V=False
     # all_args.demand_info_for_critic=['quantile','LT_all','LT_mean']
     # all_args.action_type = 'multi_discrete'
     # all_args.pay_first= False
