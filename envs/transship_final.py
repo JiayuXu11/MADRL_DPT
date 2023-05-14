@@ -202,15 +202,20 @@ class Env(object):
             - demand_list: list, one-episode demand data for training
         """
         if(self.generator_method=='merton'):
-            demand_list = [generator.merton(EPISODE_LEN, DEMAND_MAX), generator.merton(EPISODE_LEN, DEMAND_MAX),generator.merton(EPISODE_LEN, DEMAND_MAX)]
+            demand_list = [np.array(generator.merton(EPISODE_LEN,DEMAND_MAX).demand_list) for _ in range(self.agent_num)]
+            # demand_list = [generator.merton(EPISODE_LEN, DEMAND_MAX), generator.merton(EPISODE_LEN, DEMAND_MAX),generator.merton(EPISODE_LEN, DEMAND_MAX)]
         elif(self.generator_method=='poisson'):
-            demand_list=[generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX)]
+            demand_list = [generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
+            # demand_list=[generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX),generator.poisson(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX)]
         elif(self.generator_method=='normal'):
-            demand_list=[generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX)]
+            demand_list = [generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
+            # demand_list=[generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX),generator.normal(EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX)]
         elif(self.generator_method=='uniform'):
-            demand_list=[generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX)]
+            demand_list = [generator.uniform(EPISODE_LEN,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
+            # demand_list=[generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX)]
         elif(self.generator_method=='shanshu'):
-             demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
+             demand_list = [generator.shanshu(EPISODE_LEN,DEMAND_MAX,0).demand_list for _ in range(self.agent_num)]
+            #  demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
         return demand_list
 
 
@@ -227,8 +232,8 @@ class Env(object):
         return base_dim+transship_dim_dict[self.obs_transship]*transship_dim + step_dim
     
     def get_critic_obs_dim(self, info_sharing, obs_step):
-        demand_info_num = len(self.demand_info_for_critic)
-        demand_info_num = demand_info_num + (4 if 'quantile' in self.demand_info_for_critic else 0 )+((self.lead_time-1) if 'LT_all' in self.demand_info_for_critic else 0 )
+        # demand_info_num = len(self.demand_info_for_critic)
+        demand_info_num = (5 if 'quantile' in self.demand_info_for_critic else 0 )+(self.lead_time if 'LT_all' in self.demand_info_for_critic else 0 )+(1 if 'LT_mean' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
         patial_info_sharing_dim = self.agent_num-1 if not info_sharing else 0
         # critic的输入不包含当期需求
@@ -283,10 +288,6 @@ class Env(object):
             if(self.eval_index == self.n_eval):
                 self.eval_index = 0
 
-        # 统计需求的mean和std        
-        self.set_demand_statistics()
-        
-
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) 
         critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
         
@@ -320,10 +321,13 @@ class Env(object):
 
     def step(self, actions):
         
+
         action = self.action_map(actions) # Map outputs of MADRL to actual ordering actions
 
         # reward = self.state_update(action) # System state update
         reward = self.state_update_transship_revenue_sharing(action)
+
+
 
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) # Get step obs
         sub_agent_reward = self.get_processed_rewards(reward) # Get processed rewards
@@ -332,9 +336,15 @@ class Env(object):
             sub_agent_done = [True for i in range(self.agent_num)]
         else:
             sub_agent_done = [False for i in range(self.agent_num)]
+
         sub_agent_info = self.get_info()
+
+
         critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
+
+
         self.transship_matrix = np.zeros((self.agent_num, self.agent_num))
+
         return [sub_agent_obs, critic_obs, sub_agent_reward, sub_agent_done, sub_agent_info]
     
 
@@ -391,16 +401,17 @@ class Env(object):
         transship_amounts=[]
 
         if self.action_type == 'discrete' or self.action_type == 'central_discrete':
-            action = [np.argmax(i) for i in actions]
-            for i in range(len(action)):
+            action = [i[0] for i in actions]
+            for i in range(self.agent_num):
                 order_amount=action[i]//(DEMAND_MAX+1)
                 order_amounts.append(order_amount)
                 transship_amount=max(action[i]%(DEMAND_MAX+1)-DEMAND_MAX/2,-self.inventory[i]-self.order[i][0])
                 transship_amounts.append(transship_amount)
                 
         elif self.action_type == 'multi_discrete'or self.action_type == 'central_multi_discrete':
-            action = [(np.argmax(i[:self.action_dim[0]]),np.argmax(i[self.action_dim[0]:])) for i in actions]
-            for i in range(len(action)):
+            # action = [(np.argmax(i[:self.action_dim[0]]),np.argmax(i[self.action_dim[0]:])) for i in actions]
+            action = [(i[0],i[1]) for i in actions]
+            for i in range(self.agent_num):
                 order_amount=action[i][0]
                 order_amounts.append(order_amount)
                 transship_amount=max(action[i][1]-DEMAND_MAX,-self.inventory[i]-self.order[i][0])
@@ -408,7 +419,7 @@ class Env(object):
 
         elif self.action_type == 'continue':
             action = actions
-            for i in range(len(action)):
+            for i in range(self.agent_num):
                 order_amounts.append(action[i][0])
                 transship_amounts.append(max(action[i][1],-self.inventory[i]-self.order[i][0]))
 
@@ -494,8 +505,9 @@ class Env(object):
         for i in range(self.agent_num):
 
             if info_sharing:
-                base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else DEMAND_MAX/2) for k in range(self.agent_num)] if demand_today else []))
-                order_arr = np.array(order_all)
+                if i==0:
+                    base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else DEMAND_MAX/2) for k in range(self.agent_num)] if demand_today else []))
+                    order_arr = np.array(order_all)
             else:
                 base_arr = np.array([self.inventory[i],(self.demand_list[i][self.step_num-1] if self.step_num>0 else DEMAND_MAX/2) ]) if demand_today else np.array([self.inventory[i]])
                 order_arr = np.array(self.order[i])
@@ -520,62 +532,128 @@ class Env(object):
 
         return sub_agent_obs
     
-    
-    # 统计需求均值与标准差，以供critic network使用
+    def del_and_insert(self, arr, del_num, insert_num):
+    # 二分查找要删除的数字的位置
+        left, right = 0, len(arr) - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if arr[mid] == del_num:
+                # 找到要删除的数字，将其替换为插入的数字
+                arr[mid] = insert_num
+                # 从插入数字的位置开始向前遍历，直到找到一个比当前位置小的数或者到达数组的开头
+                i = mid
+                while i > 0 and arr[i - 1] > insert_num:
+                    arr[i], arr[i - 1] = arr[i - 1], arr[i]
+                    i -= 1
+                # 从插入数字的位置开始向后遍历，直到找到一个比当前位置大的数或者到达数组的结尾
+                i = mid
+                while i < len(arr) - 1 and arr[i + 1] < insert_num:
+                    arr[i], arr[i + 1] = arr[i + 1], arr[i]
+                    i += 1
+                break
+            elif arr[mid] < del_num:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return arr
+
+    # 统计需求quantile，以供critic network使用
     def set_demand_statistics(self):
-        if self.step_num<self.episode_max_steps:  
-            self.demand_mean=[np.mean([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
-            self.demand_std=[np.std([demand[idx] for idx in range(self.step_num,self.episode_max_steps)]) for demand in self.demand_list]
-            self.demand_mean_dy=[np.mean([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))]) for demand in self.demand_list]
-            self.demand_std_dy=[np.std([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))]) for demand in self.demand_list]
-            self.demand_q5=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.05) for demand in self.demand_list]
-            self.demand_q25=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.25) for demand in self.demand_list]
-            self.demand_q50=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.5) for demand in self.demand_list]
-            self.demand_q75=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.75) for demand in self.demand_list]
-            self.demand_q95=[np.quantile([demand[idx] for idx in range(self.step_num,min(self.looking_len+self.step_num,self.episode_max_steps))],0.95) for demand in self.demand_list]
-            
+        if self.step_num ==0:
+            self.demand_dy_sorted = [np.sort(demand[min(self.step_num+self.lead_time,self.episode_max_steps):min(self.looking_len+self.step_num+self.lead_time,self.episode_max_steps)]) for demand in self.demand_list] 
             self.demand_LT = [[(demand[idx] if idx<self.episode_max_steps else 0 )for idx in range(self.step_num,self.step_num+self.lead_time)] for demand in self.demand_list]
+            self.demand_LT_mean = [np.mean(dl) for dl in self.demand_LT]
+
+        elif self.step_num<self.episode_max_steps:  
+
+            insert_index=self.looking_len+self.step_num+self.lead_time-1
+
+            self.demand_LT = [[(demand[idx] if idx<self.episode_max_steps else 0 )for idx in range(self.step_num,self.step_num+self.lead_time)] for demand in self.demand_list]
+            
+            
+
+            for agent in range(self.agent_num):
+                del_num = self.demand_list[agent][min(self.step_num+self.lead_time-1,self.episode_max_steps-1)]
+                insert_num = self.demand_list[agent][insert_index] if insert_index<self.episode_max_steps else self.demand_q50[agent]
+                self.demand_dy_sorted[agent]=self.del_and_insert(self.demand_dy_sorted[agent],del_num,insert_num)
+
+                del_num_LT = self.demand_list[agent][self.step_num-1]
+                insert_num_LT = self.demand_LT[agent][-1]
+                self.demand_LT_mean[agent]=self.demand_LT_mean[agent]+(-del_num_LT+insert_num_LT)/self.lead_time
+
+        self.demand_q5=[demand[int(0.05*(len(demand)-1))] for demand in self.demand_dy_sorted]
+        self.demand_q25=[demand[int(0.25*(len(demand)-1))] for demand in self.demand_dy_sorted]
+        self.demand_q50=[demand[int(0.5*(len(demand)-1))] for demand in self.demand_dy_sorted]
+        self.demand_q75=[demand[int(0.75*(len(demand)-1))] for demand in self.demand_dy_sorted]
+        self.demand_q95=[demand[int(0.95*(len(demand)-1))] for demand in self.demand_dy_sorted]
+
+        
+        
+        
+
+        if self.use_centralized_V:
             self.demand_LT_all_helper=[]
             for lt_d in self.demand_LT:
                 self.demand_LT_all_helper +=lt_d
 
+    # 假如不transship，lead time时间后，还剩多少库存，平均缺货多少
+    def get_LT_inv_shortage(self):
+
+        self.LT_inv=self.inventory[:]
+        self.LT_avg_shortage=[0 for _ in range(self.agent_num)]
+        for agent in range(self.agent_num):
+            for lt in range(self.lead_time):
+                inv = self.LT_inv[agent]+self.order[agent][lt]-self.demand_list[agent][min(lt+self.step_num,self.episode_max_steps-1)]
+                self.LT_inv[agent]=max(inv,0)
+                self.LT_avg_shortage[agent]+=-min(inv,0)
+            self.LT_avg_shortage[agent]=self.LT_avg_shortage[agent]/self.lead_time
+
+        self.LT_inv_shortage=self.LT_inv+self.LT_avg_shortage
+
+
     # critic network 专属obs
     def get_step_obs_critic(self, info_sharing, obs_step):
         actor_agent_obs = self.get_step_obs(info_sharing, obs_step, False)
-        self.set_demand_statistics()
-        sub_agent_obs = []
 
-        actor_leadtime_resid=[self.inventory[i]+sum(self.order[i])-sum(self.demand_LT[i]) for i in range(self.agent_num)]
+        self.set_demand_statistics()
+
+        self.get_LT_inv_shortage()
+
+
+        sub_agent_obs = []
 
         for i in range(self.agent_num):
             actor_arr = actor_agent_obs[i]
-            if info_sharing:
-                demand_mean_arr = (self.demand_mean if 'all_mean' in self.demand_info_for_critic else []) + (self.demand_mean_dy if 'mean' in self.demand_info_for_critic else [])
-                demand_mean_arr = np.array(demand_mean_arr)
-                demand_quantile_arr = (self.demand_q5+self.demand_q25+self.demand_q50+self.demand_q75+self.demand_q95) if 'quantile' in self.demand_info_for_critic else [] 
-                demand_quantile_arr = np.array(demand_quantile_arr)
-                demand_std_arr = (self.demand_std if 'all_std' in self.demand_info_for_critic else []) + (self.demand_std_dy if 'std' in self.demand_info_for_critic else [])
-                demand_std_arr = np.array(demand_std_arr)
-                demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + ([np.mean(d) for d in self.demand_LT] if 'LT_mean' in self.demand_info_for_critic else [])
-                demand_LT_arr = np.array(demand_LT_arr)
-                other_actor_arr = np.array([])
+            if info_sharing :
+                if i==0:
+                    # demand_mean_arr = (self.demand_mean if 'all_mean' in self.demand_info_for_critic else []) + (self.demand_mean_dy if 'mean' in self.demand_info_for_critic else [])
+                    # demand_mean_arr = np.array(demand_mean_arr)
+                    demand_quantile_arr = (self.demand_q5+self.demand_q25+self.demand_q50+self.demand_q75+self.demand_q95) if 'quantile' in self.demand_info_for_critic else [] 
+                    demand_quantile_arr = np.array(demand_quantile_arr)
+                    # demand_std_arr = (self.demand_std if 'all_std' in self.demand_info_for_critic else []) + (self.demand_std_dy if 'std' in self.demand_info_for_critic else [])
+                    # demand_std_arr = np.array(demand_std_arr)
+                    demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + (self.demand_LT_mean if 'LT_mean' in self.demand_info_for_critic else [])
+                    demand_LT_arr = np.array(demand_LT_arr)
+                    other_actor_arr = np.array([])
             else:
-                demand_mean_arr = ([self.demand_mean[i]] if 'all_mean' in self.demand_info_for_critic else []) + ([self.demand_mean_dy[i]] if 'mean' in self.demand_info_for_critic else [])
-                demand_mean_arr = np.array(demand_mean_arr)
+                # demand_mean_arr = ([self.demand_mean[i]] if 'all_mean' in self.demand_info_for_critic else []) + ([self.demand_mean_dy[i]] if 'mean' in self.demand_info_for_critic else [])
+                # demand_mean_arr = np.array(demand_mean_arr)
                 demand_quantile_arr = [self.demand_q5[i],self.demand_q25[i],self.demand_q50[i],self.demand_q75[i],self.demand_q95[i]] if 'quantile' in self.demand_info_for_critic else [] 
                 demand_quantile_arr = np.array(demand_quantile_arr)
-                demand_std_arr = ([self.demand_std[i]] if 'all_std' in self.demand_info_for_critic else []) + ([self.demand_std_dy[i]] if 'std' in self.demand_info_for_critic else [])
-                demand_std_arr = np.array(demand_std_arr)
-                demand_LT_arr = (self.demand_LT[i] if 'LT_all' in self.demand_info_for_critic else []) + ([np.mean(self.demand_LT[i]) ] if 'LT_mean' in self.demand_info_for_critic else [])
+                # demand_std_arr = ([self.demand_std[i]] if 'all_std' in self.demand_info_for_critic else []) + ([self.demand_std_dy[i]] if 'std' in self.demand_info_for_critic else [])
+                # demand_std_arr = np.array(demand_std_arr)
+                demand_LT_arr = (self.demand_LT[i] if 'LT_all' in self.demand_info_for_critic else []) + ([self.demand_LT_mean[i]] if 'LT_mean' in self.demand_info_for_critic else [])
                 demand_LT_arr = np.array(demand_LT_arr)
-                other_actor_arr = actor_leadtime_resid[:i]+actor_leadtime_resid[i+1:]
+                other_actor_arr = self.LT_inv_shortage
                 other_actor_arr = np.array(other_actor_arr)
 
 
             if(self.normalize):
-                arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1, other_actor_arr*2/DEMAND_MAX-1])
+                # arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1, other_actor_arr*2/DEMAND_MAX-1])
+                arr = np.concatenate([actor_arr, demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1, other_actor_arr*2/DEMAND_MAX-1])
             else:
-                arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr, demand_LT_arr])
+                # arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr, demand_LT_arr])
+                arr = np.concatenate([actor_arr, demand_quantile_arr, demand_LT_arr])
             sub_agent_obs.append(arr)
 
         return sub_agent_obs
@@ -676,7 +754,8 @@ class Env(object):
         - Outputs:
             - rewards: list, rewards for each actors (typically one-period costs for all actors)
         """
-        all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
+        # all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
+        all_transship_revenue,transship_volume = 0,0
         cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         rewards_after=[]
         rewards_before = []

@@ -166,7 +166,7 @@ def get_config():
     parser.add_argument("--save_interval", type=int, 
                         default=1, help="time duration between contiunous twice models saving.")
     parser.add_argument("--log_interval", type=int, 
-                        default=1, help="time duration between contiunous twice log printing.")
+                        default=20, help="time duration between contiunous twice log printing.")
     # parser.add_argument("--model_dir", type=str, 
     #                     default=r"C:\Users\Jerry\Desktop\thesis\code\Multi-Agent-Deep-Reinforcement-Learning-on-Multi-Echelon-Inventory-Management-main\results\TransshipNewEnv\Inventory Management\happo\check\run_seed_1\models", help="by default None. set the path to pretrained model.")
     parser.add_argument("--model_dir", type=str, 
@@ -262,10 +262,10 @@ def get_config():
                         default=True, help="step信息是否作为actor网络的输入")
     
     parser.add_argument("--train_episode_length", type=int, 
-                        default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计)")
+                        default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计),不用管，会自动调节的")
     
     parser.add_argument("--transship_revenue_method", type=str, 
-                        default='market_ratio',choices=['constant', 'ratio', 'market_ratio'], help="transship机制创造收益的分配模式")
+                        default='constant',choices=['constant', 'ratio', 'market_ratio'], help="transship机制创造收益的分配模式")
     parser.add_argument("--constant_transship_revenue", type=float, 
                         default=0.1, help="每transship一单位,可收获的收益")
     parser.add_argument("--ratio_transship_revenue", type=float, 
@@ -288,10 +288,10 @@ def get_config():
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
     
     parser.add_argument("--demand_info_for_critic", type=str, 
-                        default=['all_mean','all_std','mean','std'], choices=['all_mean','all_std','mean','std','quantile','LT_mean','LT_all'],help="给critic network披露的未来需求信息")
+                        default=['quantile','LT_all'], choices=['quantile','LT_all'],help="给critic network披露的未来需求信息")
     
     parser.add_argument("--setting_time_end", type=t_or_f, 
-                        default=True, help="当时间超过episode_length时,之后的收益是否考虑")
+                        default=True, help="当时间超过episode_length时,之后的收益是否不考虑")
     
     parser.add_argument("--homo_distance", type=t_or_f, 
                         default=False, help="是否认为零售商间距离一致")

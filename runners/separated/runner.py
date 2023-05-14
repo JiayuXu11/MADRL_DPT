@@ -16,7 +16,6 @@ class CRunner(Runner):
 
     def run(self):
 
-        start = time.time()
         episodes = int(self.num_env_steps) // self.episode_length // self.n_rollout_threads
         rewards_log = []
         inv_log = []
@@ -27,34 +26,34 @@ class CRunner(Runner):
         best_bw = []
         record = 0
 
+        
         for episode in range(episodes):
-            
-            if episode % self.eval_interval == 0 and self.use_eval:
-                re, dict_write = self.eval()
-                dict_write.update({'return':re})
-                self.writter.add_scalars('cost_graph', dict_write, episode)
-                print("Eval average cost: ", re, " Eval cost composition: ", dict_write)
-                print("Best Eval average cost(before): ", best_reward)
-                # test_reward,_=self.eval(test_tf=True)
-                # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
-                if(re > best_reward):
-                    if episode > 0:
-                        self.save()
-                        print("A better model is saved!")
+            # if episode % self.eval_interval == 0 and self.use_eval:
+            #     re, dict_write = self.eval()
+            #     dict_write.update({'return':re})
+            #     self.writter.add_scalars('cost_graph', dict_write, episode)
+            #     print("Eval average cost: ", re, " Eval cost composition: ", dict_write)
+            #     print("Best Eval average cost(before): ", best_reward)
+            #     # test_reward,_=self.eval(test_tf=True)
+            #     # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
+            #     if(re > best_reward):
+            #         if episode > 0:
+            #             self.save()
+            #             print("A better model is saved!")
                     
-                    best_reward = re
-                    best_dict_write = dict_write
-                    record = 0
-                elif(episode > self.n_warmup_evaluations):
-                    record += 1
-                    if(record == self.n_no_improvement_thres):
-                        print("Training finished because of no imporvement for " + str(self.n_no_improvement_thres) + " evaluations")
-                        self.model_dir=str(self.run_dir / 'models')
-                        self.restore()
-                        test_reward,dict_write_test=self.eval(test_tf=True)
-                        print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
-                        return best_reward,best_dict_write, test_reward, dict_write_test
-                # break
+            #         best_reward = re
+            #         best_dict_write = dict_write
+            #         record = 0
+            #     elif(episode > self.n_warmup_evaluations):
+            #         record += 1
+            #         if(record == self.n_no_improvement_thres):
+            #             print("Training finished because of no imporvement for " + str(self.n_no_improvement_thres) + " evaluations")
+            #             self.model_dir=str(self.run_dir / 'models')
+            #             self.restore()
+            #             test_reward,dict_write_test=self.eval(test_tf=True)
+            #             print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
+            #             return best_reward,best_dict_write, test_reward, dict_write_test
+            #     # break
 
             self.warmup(train = True, normalize = self.all_args.norm_input, test_tf = False)
             if self.use_linear_lr_decay:
@@ -67,62 +66,18 @@ class CRunner(Runner):
 
                 if self.all_args.algorithm_name == 'happo':
                     # Sample actions
-                    values, actions, action_log_probs, rnn_states, rnn_states_critic, actions_env = self.collect(step)
+
+                    values, actions, action_log_probs, rnn_states, rnn_states_critic = self.collect(step)
+
                     # Obser reward and next obs
-                    obs, obs_critic, rewards, dones, infos = self.envs.step(actions_env)
+
+                    obs, obs_critic, rewards, dones, infos = self.envs.step(actions)
+
                 elif self.all_args.algorithm_name == 'heuristic1':
-                    inv, demand, orders = self.envs.get_property()
-                    actions_env=[]
-                    for i in range(len(inv)):
-                        inv_,demand_,orders_= inv[i], demand[i], orders[i]
-                        actions_=[]
-                        for j in range(len(inv_)):
-                            inv_pred=max(inv_[j]+orders_[j][0]-demand_[j],0)
-                            inv_pred=max(inv_pred+orders_[j][1]-demand_[j],0)
-                            inv_pred=max(inv_pred+orders_[j][2]-demand_[j],0)
-                            inv_pred=max(inv_pred+orders_[j][3]-demand_[j],0)
-                            order_heu=max(demand_[j]-inv_pred,0)
-                            # order_heu=order_heu if order_heu>5 else 0
-                            actions_.append(order_heu)
-                        actions_env.append(actions_)
-                    obs, rewards, dones, infos = self.envs.step(actions_env,False)
+                    return 
                 elif self.all_args.algorithm_name == 'heuristic2':
-                    def get_order_revenue_list(revenue_per, holding_cost, backorder_cost, shipping_cost, demand_pred):
-                        revenue_list=[]
-                        revenue_list.append(-demand_pred*backorder_cost)
-                        for k in range(1,30):
-                            revenue_k=(k*demand_pred*revenue_per-sum(range(k))*demand_pred*holding_cost-shipping_cost)/k
-                            revenue_list.append(revenue_k)
-                        return revenue_list
-
-                    inv, demand, orders = self.envs.get_property()
-                    actions_env=[]
-                    
-                    for env_idx in range(self.n_rollout_threads):
-                        actions_=[]
-                        for agent in range(self.num_agents):
-                            inv = self.buffer[agent].obs[step][env_idx][0]
-                            demand = self.buffer[agent].obs[step][env_idx][1]
-                            orders = self.buffer[agent].obs[step][env_idx][4:]
-
-                            inv_pred=max(inv+orders[0]-demand,0)
-                            inv_pred=max(inv_pred+orders[1]-demand,0)
-                            inv_pred=max(inv_pred+orders[2]-demand,0)
-                            inv_pred=max(inv_pred+orders[3]-demand,0)
-                            order_best=np.argmax(get_order_revenue_list(1., 0.2, 0.5, 5, demand))*demand
-                            order_tf=1.5*max(demand-inv_pred,0)>0.2*max(order_best-demand,0)
-                            order_heu=max(order_best-inv_pred,0) if order_tf else 0
-                            # order_heu=order_heu if order_heu>5 else 0
-                            actions_.append([order_heu,0])
-                        actions_env.append(actions_)
-                    actions_env=np.array(actions_env)
+                    return
                 
-                        
-                    obs, obs_critic, rewards, dones, infos = self.envs.step(actions_env,False)
-
-
-                
-
                 
                 available_actions = np.array([[None for agent_id in range(self.num_agents)] for info in infos])
 
@@ -135,34 +90,39 @@ class CRunner(Runner):
                 demand_log.append(demand)
                 actions_log.append(copy.deepcopy(orders))
 
+
                 data = obs, obs_critic, rewards, dones, infos, available_actions, \
                        values, actions, action_log_probs, \
                        rnn_states, rnn_states_critic 
-                
+
                 # insert data into buffer
                 self.insert(data)
 
+
+
             # compute return and update network
+
             if self.all_args.training_bf:
                 self.compute()
                 train_infos = self.train()
                 for i,train_info in enumerate(train_infos):
                     self.writter.add_scalars('training process_{}'.format(i), train_info, episode)
-            
+
             # post process
             total_num_steps = (episode + 1) * self.episode_length * self.n_rollout_threads           
 
+
             # log information
             if episode % self.log_interval == 0:
-                end = time.time()
-                print("\n Algo {} Exp {} updates {}/{} episodes, total num timesteps {}/{}, FPS {}.\n"
+
+                print("\n Algo {} Exp {} updates {}/{} episodes, total num timesteps {}/{}\n"
                         .format(self.algorithm_name,
                                 self.experiment_name,
                                 episode,
                                 episodes,
                                 total_num_steps,
                                 self.num_env_steps,
-                                int(total_num_steps / (end - start))))
+                                ))
 
                 threads_rew = [[] for i in range(self.n_rollout_threads)]
                 threads_inv = [[] for i in range(self.n_rollout_threads)]
@@ -235,8 +195,12 @@ class CRunner(Runner):
         rnn_state_collector=[]
         rnn_state_critic_collector=[]
 
+
+        
         for agent_id in range(self.num_agents):
             self.trainer[agent_id].prep_rollout()
+
+
             value, action, action_log_prob, rnn_state, rnn_state_critic \
                 = self.trainer[agent_id].policy.get_actions(self.buffer[agent_id].share_obs[step],
                                                 self.buffer[agent_id].obs[step],
@@ -252,41 +216,48 @@ class CRunner(Runner):
             #                                     self.buffer[agent_id].masks[step],
             #                                     self.buffer[agent_id].available_actions[step],deterministic=True)
 
+
             value_collector.append(_t2n(value))
             action_collector.append(_t2n(action))
 
-            if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
-                for i in range(self.envs.action_space[agent_id].shape):
-                    uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i].cpu().detach()]
-                    if i == 0:
-                        action_env = uc_action_env
-                    else:
-                        action_env = np.concatenate((action_env, uc_action_env), axis=1)
-            elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
-                action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action.cpu().detach()], 1)
-            elif self.envs.action_space[agent_id].__class__.__name__ == 'Box':
-                action_env = np.array(action.cpu().detach())
-            else:
-                raise NotImplementedError
+
+            # if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
+            #     for i in range(self.envs.action_space[agent_id].shape):
+            #         uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i].cpu().detach()]
+            #         if i == 0:
+            #             action_env = uc_action_env
+            #         else:
+            #             action_env = np.concatenate((action_env, uc_action_env), axis=1)
+            # elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
+            #     action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action.cpu().detach()], 1)
+            # elif self.envs.action_space[agent_id].__class__.__name__ == 'Box':
+            #     action_env = np.array(action.cpu().detach())
+            # else:
+            #     raise NotImplementedError
             
-            temp_actions_env.append(action_env)
+
+
+            # temp_actions_env.append(action_env)
+
 
             action_log_prob_collector.append(_t2n(action_log_prob))
             rnn_state_collector.append(_t2n(rnn_state))
             rnn_state_critic_collector.append(_t2n(rnn_state_critic))
 
+
             
         
+
         # [self.envs, agents, dim]
-        actions_env = []
-        for i in range(self.n_rollout_threads):
-            one_hot_action_env = []
-            for temp_action_env in temp_actions_env:
-                one_hot_action_env.append(temp_action_env[i])
-                if self.all_args.central_controller:
-                    one_hot_action_env = temp_action_env[i].reshape(self.all_args.num_involver,-1)
-                    # print(np.where(one_hot_action_env >= 1))
-            actions_env.append(one_hot_action_env)
+        # actions_env = []
+        # for i in range(self.n_rollout_threads):
+        #     one_hot_action_env = []
+        #     for temp_action_env in temp_actions_env:
+        #         one_hot_action_env.append(temp_action_env[i])
+        #         if self.all_args.central_controller:
+        #             one_hot_action_env = temp_action_env[i].reshape(self.all_args.num_involver,-1)
+        #             # print(np.where(one_hot_action_env >= 1))
+        #     actions_env.append(one_hot_action_env)
 
         values = np.array(value_collector).transpose(1, 0, 2)
         actions = np.array(action_collector).transpose(1, 0, 2)
@@ -294,8 +265,9 @@ class CRunner(Runner):
         rnn_states = np.array(rnn_state_collector).transpose(1, 0, 2, 3)
         rnn_states_critic = np.array(rnn_state_critic_collector).transpose(1, 0, 2, 3)
 
+
         
-        return values, actions, action_log_probs, rnn_states, rnn_states_critic, actions_env
+        return values, actions, action_log_probs, rnn_states, rnn_states_critic
 
     def insert(self, data):
         obs, share_obs_critic, rewards, dones, infos, available_actions, \
@@ -361,7 +333,7 @@ class CRunner(Runner):
 
             for eval_step in range(self.episode_length):
                 
-                temp_actions_env = []
+                eval_actions_collector = []
                 eval_values=[]
                 for agent_id in range(self.num_agents):
                     self.trainer[agent_id].policy.hist_demand=self.eval_envs.get_hist_demand()[0][agent_id]
@@ -386,38 +358,38 @@ class CRunner(Runner):
                     eval_rnn_states[:,agent_id]=_t2n(temp_rnn_state)
                     eval_rnn_states_critic[:,agent_id]=_t2n(temp_rnn_state_critic)
                     action = eval_actions.detach().cpu().numpy()
+                    eval_actions_collector.append(action)
+                    # if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
+                    #     for i in range(self.envs.action_space[agent_id].shape):
+                    #         uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
+                    #         # print(np.where(uc_action_env >= 1))
+                    #         if i == 0:
+                    #             action_env = uc_action_env
+                    #         else:
+                    #             action_env = np.concatenate((action_env, uc_action_env), axis=1)
+                    #             # print(np.where(action_env >= 1))
+                    # elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
+                    #     action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action], 1)
+                    # else:
+                    #     action_env=action
+                    #     # raise NotImplementedError
 
-                    if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
-                        for i in range(self.envs.action_space[agent_id].shape):
-                            uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
-                            # print(np.where(uc_action_env >= 1))
-                            if i == 0:
-                                action_env = uc_action_env
-                            else:
-                                action_env = np.concatenate((action_env, uc_action_env), axis=1)
-                                # print(np.where(action_env >= 1))
-                    elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
-                        action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action], 1)
-                    else:
-                        action_env=action
-                        # raise NotImplementedError
-
-                    temp_actions_env.append(action_env)
+                    # temp_actions_env.append(action_env)
 
                 eval_values_steps[eval_step]=eval_values
-                #eval_actions = np.array(eval_actions_collector).transpose(1,0,2)
-                eval_actions_env = []
-                for i in range(self.n_eval_rollout_threads):
-                    eval_one_hot_action_env = []
-                    for eval_temp_action_env in temp_actions_env:
-                        eval_one_hot_action_env.append(eval_temp_action_env[i])
-                        if self.all_args.central_controller:
-                            eval_one_hot_action_env = eval_temp_action_env[i].reshape(self.all_args.num_involver,-1)
-                            # print(np.where(eval_one_hot_action_env >= 1))
-                    eval_actions_env.append(eval_one_hot_action_env)
+                eval_actions = np.array(eval_actions_collector).transpose(1,0,2)
+                # eval_actions_env = []
+                # for i in range(self.n_eval_rollout_threads):
+                #     eval_one_hot_action_env = []
+                #     for eval_temp_action_env in temp_actions_env:
+                #         eval_one_hot_action_env.append(eval_temp_action_env[i])
+                #         if self.all_args.central_controller:
+                #             eval_one_hot_action_env = eval_temp_action_env[i].reshape(self.all_args.num_involver,-1)
+                #             # print(np.where(eval_one_hot_action_env >= 1))
+                #     eval_actions_env.append(eval_one_hot_action_env)
 
                 # Obser reward and next obs
-                eval_obs,eval_obs_critic, eval_rewards, eval_dones, eval_infos = self.eval_envs.step(eval_actions_env)
+                eval_obs,eval_obs_critic, eval_rewards, eval_dones, eval_infos = self.eval_envs.step(eval_actions)
 
                 eval_available_actions = None
 
