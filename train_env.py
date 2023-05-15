@@ -31,12 +31,13 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+    # 最后leadtime天的行动不参与训练
     all_args.train_episode_length=all_args.episode_length-all_args.lead_time-1
-
-
+    # 自动调num_steps
+    all_args.num_env_steps = all_args.num_episodes * all_args.episode_length * all_args.n_rollout_threads
     # all_args.cat_self=True
     # all_args.hidden_size = [64,128,256,256]
-    all_args.use_centralized_V=False
+    # all_args.use_centralized_V=False
     # all_args.demand_info_for_critic=['quantile','LT_all','LT_mean']
     # all_args.action_type = 'multi_discrete'
     # all_args.pay_first= False

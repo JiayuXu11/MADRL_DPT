@@ -23,7 +23,7 @@ def get_config():
     # parser.add_argument("--algorithm_name", type=str,
     #                     default='heuristic2', choices=["happo"])
 
-
+    
     parser.add_argument('--scenario_name', type=str, 
                         default='InventoryManagement', help="Which scenario to run on")
     parser.add_argument("--num_landmarks", type=int, 
@@ -53,7 +53,11 @@ def get_config():
     parser.add_argument("--n_render_rollout_threads", type=int, 
                         default=1, help="Number of parallel envs for rendering rollouts")
     parser.add_argument("--num_env_steps", type=int, 
-                        default=300e4, help='Number of environment steps to train (default: 10e6)')
+                        default=300e4, help='Number of environment steps to train (default: 10e6) (deprecated)')
+    
+    parser.add_argument("--num_episodes", type=int, 
+                        default=2000, help='Number of episodes, which will set steps automatically')
+    
     parser.add_argument("--n_warmup_evaluations", type=int, 
                         default=10, help="Number of evaluations for warmup")  # 在n_warmup_evaluations中不会触发no_improvement导致的中断
     parser.add_argument("--n_no_improvement_thres", type=int, 
