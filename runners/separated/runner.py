@@ -166,7 +166,7 @@ class CRunner(Runner):
                 actions_log = []
                 demand_log = []
 
-        print("Training finished because of finish all the episodes: " + episodes + " episodes")
+        print("Training finished because of finish all the episodes: " + str(episodes) + " episodes")
         self.model_dir=str(self.run_dir / 'models')
         self.restore()
         test_reward,dict_write_test=self.eval(test_tf=True)
