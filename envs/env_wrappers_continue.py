@@ -1,9 +1,11 @@
 import numpy as np
+import os
+import chardet
 import gym
 from gym import spaces
 # from envs.newsvendor_continue import Env
 # from envs.newsvendor import Env
-from envs.transship_final import Env
+from envs.transship_final_eval import Env
 # from envs.transship_new_all import Env
 # from envs.ms import Env
 # from envs.serial import Env
@@ -144,7 +146,7 @@ class SubprocVecEnv(object):
         pass
 
 
-# single env
+# single env(deprecated)
 class DummyVecEnv(object):
     def __init__(self, all_args):
         """
@@ -225,13 +227,132 @@ class DummyVecEnv(object):
         obs, critic_obs = zip(*results)
         return np.stack(obs), np.stack(critic_obs)
     
-    def get_eval_bw_res(self):
-        res = self.env_list[0].get_eval_bw_res()
-        return res
-    
     def get_eval_num(self):
         eval_num = self.env_list[0].get_eval_num()
         return eval_num
+        
+    def close(self):
+        pass
+
+    def render(self, mode="rgb_array"):
+        pass
+
+
+# eval/test env 
+class EvalVecEnv(object):
+    def __init__(self, all_args, eval_tf=True):
+        """
+        envs: list of gym environments to run in subprocesses
+        """
+        self.data_path = [all_args.eval_dir+'/{}/'.format(i) for i in range(all_args.num_involver)] if eval_tf else [all_args.test_dir+'/{}/'.format(i) for i in range(all_args.num_involver)]
+
+        self.n_eval, self.eval_data = self.get_data()
+
+        self.env_list = [Env(all_args) for i in range(self.n_eval)]
+
+
+        self.num_envs = all_args.n_rollout_threads
+
+        # self.env_list = [Env() for i in range(all_args.n_rollout_threads)]
+        # self.num_envs = all_args.n_rollout_threads
+
+        self.num_agent = self.env_list[0].agent_num 
+        self.signal_obs_dim = self.env_list[0].obs_dim
+        self.signal_obs_critic_dim = self.env_list[0].obs_critic_dim
+        self.signal_action_dim = self.env_list[0].action_dim
+        self.num_agent = 1 if all_args.central_controller else self.num_agent
+
+
+        self.u_range = 1.0  # control range for continuous control
+        self.movable = True
+
+        # environment parameters
+
+        # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
+        self.discrete_action_input = False
+        # if true, even the action is continuous, action will be performed discretely
+        self.force_discrete_action = False
+        # in this env, force_discrete_action == False��because world do not have discrete_action
+
+        # configure spaces
+        self.action_space = []
+        self.observation_space = []
+        self.observation_space_critic = []
+
+        for agent in range(self.num_agent):
+            total_action_space = []
+            if all_args.action_type == 'multi_discrete' or all_args.action_type == 'central_multi_discrete' or all_args.action_type == 'central_discrete':
+                for d in self.signal_action_dim:
+                    total_action_space.append(spaces.Discrete(d))  #订货可定0-60,transship 可-20 - 20
+            # physical action space
+            elif all_args.action_type == 'discrete':
+                u_action_space = spaces.Discrete(self.signal_action_dim)  # 5个离散的动作
+                total_action_space.append(u_action_space)
+            else:
+                u_action_space = spaces.Box(low=-self.u_range, high=+self.u_range, shape=(self.signal_action_dim,), dtype=np.float32)  # [-1,1]
+                total_action_space.append(u_action_space)
+                
+            # total action space
+            if len(total_action_space) > 1:
+                # all action spaces are discrete, so simplify to MultiDiscrete action space
+                if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
+                    act_space = MultiDiscrete([[0, act_space.n - 1] for act_space in total_action_space])
+                else:
+                    act_space = spaces.Tuple(total_action_space)
+                self.action_space.append(act_space)
+            else:
+                self.action_space.append(total_action_space[0])
+
+
+            self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_dim,), dtype=np.float32))  # [-inf,inf]
+            self.observation_space_critic.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(self.signal_obs_critic_dim,),
+                                                     dtype=np.float32))
+
+    # 获取验证集或测试集的数据
+    def get_data(self):
+        
+        data_path = self.data_path
+        files_0 = os.listdir(data_path[0])
+        n_eval = len(files_0)
+        eval_data=[]
+    
+        for i in range(n_eval):
+            eval_data_i=[]
+            for j in range(len(data_path)):
+                files=os.listdir(data_path[j])
+                data = []
+                with open(data_path[j] + files[i], "rb") as f:
+                    d=f.read()
+                    encoding = chardet.detect(d)['encoding']
+
+                with open(data_path[j] + files[i], "rb") as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        data.append(float(line))
+                eval_data_i.append(data)
+            eval_data.append(eval_data_i)
+        # print(np.array(eval_data).shape)
+        return n_eval, eval_data
+
+    def step(self, actions):
+
+        results = [env.step(action) for env, action in zip(self.env_list, actions)]
+        obs, critic_obs, rews, dones, infos = zip(*results)
+        return np.stack(obs), np.stack(critic_obs),np.stack(rews), np.stack(dones), infos
+    
+    def get_hist_demand(self):
+        demand = [env.get_hist_demand() for env in self.env_list]
+        return demand    
+    
+    def reset(self, normalize = True):
+        # 在这里把eval_data和test_data传进去
+        results = [env.reset(train = False, demand_list_set=self.eval_data[index],normalize=normalize) for index,env in enumerate(self.env_list)]
+        obs, critic_obs = zip(*results)
+        return np.stack(obs), np.stack(critic_obs)
+    
+    def get_eval_num(self):
+        
+        return self.n_eval
         
     def close(self):
         pass

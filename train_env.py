@@ -6,15 +6,18 @@ import numpy as np
 from pathlib import Path
 import torch
 from config import get_config
-from envs.env_wrappers_continue import SubprocVecEnv, DummyVecEnv
+from envs.env_wrappers_continue import SubprocVecEnv, DummyVecEnv,EvalVecEnv
 from runners.separated.runner import CRunner as Runner
 import yaml
 
 def make_train_env(all_args):
     return SubprocVecEnv(all_args)
 
-def make_eval_env(all_args):
-    return DummyVecEnv(all_args)
+# def make_eval_env(all_args,):
+#     return DummyVecEnv(all_args)
+
+def make_eval_env(all_args,eval_tf=True):
+    return EvalVecEnv(all_args,eval_tf)
 
 def parse_args(args, parser):
     all_args = parser.parse_known_args(args)[0]
@@ -35,6 +38,7 @@ if __name__ == "__main__":
     all_args.train_episode_length=all_args.episode_length-all_args.lead_time-1
     # 自动调num_steps
     all_args.num_env_steps = all_args.num_episodes * all_args.episode_length * all_args.n_rollout_threads
+
     # all_args.cat_self=True
     # all_args.hidden_size = [64,128,256,256]
     # all_args.use_centralized_V=False
@@ -121,7 +125,8 @@ if __name__ == "__main__":
                 all_args.entropy_coef = coef
             # env
             envs = make_train_env(all_args)
-            eval_envs = make_eval_env(all_args) if all_args.use_eval else None
+            eval_envs = make_eval_env(all_args,eval_tf=True)
+            test_envs = make_eval_env(all_args,eval_tf=False) 
 
             
 
@@ -129,6 +134,7 @@ if __name__ == "__main__":
                 "all_args": all_args,
                 "envs": envs,
                 "eval_envs": eval_envs,
+                "test_envs": test_envs,
                 "num_agents": num_agents,
                 "device": device,
                 "run_dir": run_dir

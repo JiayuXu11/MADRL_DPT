@@ -114,13 +114,7 @@ class Env(object):
         self.reward_type=args.reward_type
         self.reward_norm_multiplier = args.reward_norm_multiplier
         #============================================================================ 
-        self.eval_path = [args.eval_dir+'/{}/'.format(i) for i in range(self.agent_num)]
-        self.test_path = [args.test_dir+'/{}/'.format(i) for i in range(self.agent_num)]
-        self.n_eval, self.eval_data = self.get_eval_data() # Get demand data for evaluation
-        self.eval_index = 0 # Counter for evaluation
 
-        self.n_test, self.test_data = self.get_test_data() # Get demand data for evaluation
-        self.test_index = 0 # Counter for evaluation
 
     def get_shipping_order(self, matrix):
         indices_sorted_by_value = np.argsort(matrix, axis=None)
@@ -136,62 +130,6 @@ class Env(object):
     def phi(self, distance):
         return 0.0005*distance
     
-    def get_eval_data(self):
-        
-        files_0 = os.listdir(self.eval_path[0])
-        n_eval = len(files_0)
-        eval_data=[]
-    
-        for i in range(n_eval):
-            eval_data_i=[]
-            for j in range(len(self.eval_path)):
-                files=os.listdir(self.eval_path[j])
-                data = []
-                with open(self.eval_path[j] + files[i], "rb") as f:
-                    d=f.read()
-                    encoding = chardet.detect(d)['encoding']
-
-                with open(self.eval_path[j] + files[i], "rb") as f:
-                    lines = f.readlines()
-                    for line in lines:
-                        data.append(float(line))
-                eval_data_i.append(data)
-            eval_data.append(eval_data_i)
-        # print(np.array(eval_data).shape)
-        return n_eval, eval_data
-
-    def get_test_data(self):
-        """
-        - Need to be implemented
-        - Load local demand data for testuation
-        - Inputs:
-            - Modify the inputs as you need
-        - Outputs:
-            - n_test: int, number of demand sequences (also number of episodes in one testuation)
-            - test_data: list, demand data for testuation
-        """
-        files_0 = os.listdir(self.test_path[0])
-        n_test = len(files_0)
-        test_data=[]
-    
-        for i in range(n_test):
-            test_data_i=[]
-            for j in range(len(self.test_path)):
-                files=os.listdir(self.test_path[j])
-                data = []
-                with open(self.test_path[j] + files[i], "rb") as f:
-                    d=f.read()
-                    encoding = chardet.detect(d)['encoding']
-
-                with open(self.test_path[j] + files[i], "rb") as f:
-                    lines = f.readlines()
-                    for line in lines:
-                        data.append(float(line))
-                test_data_i.append(data)
-            test_data.append(test_data_i)
-        # print(np.array(test_data).shape)
-        return n_test, test_data
-
     def get_training_data(self):
         """
         - Need to be implemented
@@ -241,7 +179,7 @@ class Env(object):
         return self.get_obs_dim(info_sharing, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
 
 
-    def reset(self, train = True, normalize = True, test_tf = False):
+    def reset(self, train = True, normalize = True, demand_list_set = None):
 
         #============================================================================
         # Reset all the member variables that need to be reset at the beginning of an episode here
@@ -277,16 +215,9 @@ class Env(object):
 
         if(train == True):
             self.demand_list = self.get_training_data() # Get demand data for training
-        elif test_tf:
-            self.demand_list = self.test_data[self.test_index] # Get demand data for testuation
-            self.test_index += 1
-            if(self.test_index == self.n_test):
-                self.test_index = 0
+
         else:
-            self.demand_list = self.eval_data[self.eval_index] # Get demand data for evaluation
-            self.eval_index += 1
-            if(self.eval_index == self.n_eval):
-                self.eval_index = 0
+            self.demand_list = demand_list_set
 
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) 
         critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
@@ -348,22 +279,6 @@ class Env(object):
         return [sub_agent_obs, critic_obs, sub_agent_reward, sub_agent_done, sub_agent_info]
     
 
-    def get_eval_num(self):
-        return self.n_eval
-
-    # 不需要其实
-    def get_eval_bw_res(self):
-        """"
-        - Need to be implemented
-        - Get the ordering fluctuation measurement for each actor/echelon during evaluation. The results will be printed out after each evaluation during training. 
-        - Inputs:
-            - Modify the inputs as you need
-        - Outputs:
-            - eval_bw_res: list, ordering fluctuation measurement for each actor/echelon
-        """
-        eval_bw_res = []
-
-        return eval_bw_res
     
     def get_demand(self):
         return [self.demand_list[i][self.step_num-1] for i in range(self.agent_num)]
