@@ -308,4 +308,21 @@ def get_config():
                         default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
     parser.add_argument("--cat_self_critic", type=t_or_f, 
                         default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
+    
+    parser.add_argument("--H", type=float, 
+                        default=0.2, help="holding cost per unit")
+    parser.add_argument("--R", type=float, 
+                        default=3.0, help="selling price per unit")
+    parser.add_argument("--P", type=float, 
+                        default=3.5, help="penalty cost per unit")
+    parser.add_argument("--C", type=float, 
+                        default=2, help="ordering cost per unit")
+    
+    parser.add_argument("--shipping_cost_per_distance", type=float, 
+                        default=0.0005, help="shipping_cost_per_distance")
+    
+
+    parser.add_argument("--distance_index", type=int, 
+                        default=0, choices=[0, 1, 2, 3] ,help="用哪一个distance矩阵,0表示homo_distance")
+    
     return parser

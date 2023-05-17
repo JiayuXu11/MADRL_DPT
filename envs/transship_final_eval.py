@@ -3,44 +3,64 @@ from . import generator
 import os 
 import random
 import chardet
-#====================================================================================
-# Define all the exogenous parameters you need in your supply chain environment here.
-# They may include:
-# 1. Number of actors
-# 2. Dimention of observation space and action space
-# 3. Cost coefficients
-# 4. File path of your evaluation demand data
-# 5. Other parameters
-H = [0.2, 0.2, 0.2, 0.2, 0.2]  # holding cost
-R = [3.0, 3.0, 3.0, 3.0, 3.0] 
-P = [3.5, 3.5, 3.5, 3.5, 3.5]  # penalty for unsatisfied demand
-C = [2 ,2 ,2 ,2 ,2]  # purchasing cost
-S = [0.5, 0.5, 0.5, 0.5, 0.5]  # unit shipping cost
-# RT = 0.1 # revenue per transshipping unit
 
+
+DISTANCE = [
+    np.array(
+       [[   0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+       [1000,    0, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+       [1000, 1000,    0, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
+       [1000, 1000, 1000,    0, 1000, 1000, 1000, 1000, 1000, 1000],
+       [1000, 1000, 1000, 1000,    0, 1000, 1000, 1000, 1000, 1000],
+       [1000, 1000, 1000, 1000, 1000,    0, 1000, 1000, 1000, 1000],
+       [1000, 1000, 1000, 1000, 1000, 1000,    0, 1000, 1000, 1000],
+       [1000, 1000, 1000, 1000, 1000, 1000, 1000,    0, 1000, 1000],
+       [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000,    0, 1000],
+       [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000,    0]]),
+    np.array(
+       [[   0, 1017, 1660,  913, 1205, 1266,  757, 1544, 1947, 1421],
+       [1017,    0, 1242, 1313, 1734,  642, 1200, 1647, 1885, 2000],
+       [1660, 1242,    0, 1258, 1573,  749, 1292,  990,  948, 1806],
+       [ 913, 1313, 1258,    0,  566, 1207,  300,  808, 1246,  836],
+       [1205, 1734, 1573,  566,    0, 1618,  682,  879, 1314,  412],
+       [1266,  642,  749, 1207, 1618,    0, 1154, 1311, 1459, 1885],
+       [ 757, 1200, 1292,  300,  682, 1154,    0,  946, 1372,  944],
+       [1544, 1647,  990,  808,  879, 1311,  946,    0,  591, 1045],
+       [1947, 1885,  948, 1246, 1314, 1459, 1372,  591,    0, 1445],
+       [1421, 2000, 1806,  836,  412, 1885,  944, 1045, 1445,    0]]),
+    np.array(
+       [[   0, 1701,  636,  821,  874, 1362, 1449,  857,  300,  587],
+       [1701,    0, 1364, 1801, 1360, 1138,  838, 1102, 1707, 2000],
+       [ 636, 1364,    0, 1062,  869, 1248, 1062,  601,  622,  974],
+       [ 821, 1801, 1062,    0,  693, 1127, 1762, 1021,  872,  747],
+       [ 874, 1360,  869,  693,    0,  751, 1387,  654,  915, 1024],
+       [1362, 1138, 1248, 1127,  751,    0, 1425,  911, 1398, 1524],
+       [1449,  838, 1062, 1762, 1387, 1425,    0,  994, 1435, 1785],
+       [ 857, 1102,  601, 1021,  654,  911,  994,    0,  871, 1147],
+       [ 300, 1707,  622,  872,  915, 1398, 1435,  871,    0,  612],
+       [ 587, 2000,  974,  747, 1024, 1524, 1785, 1147,  612,    0]]),
+    np.array(
+       [[   0,  576,  300, 1125, 1083,  976, 1129, 1417,  676,  868],
+       [ 576,    0,  449, 1249, 1306, 1169, 1481, 1836,  849, 1206],
+       [ 300,  449,    0, 1092, 1189, 1071, 1204, 1545,  650,  933],
+       [1125, 1249, 1092,    0, 2000, 1917,  898, 1581,  605,  767],
+       [1083, 1306, 1189, 2000,    0,  302, 1694, 1511, 1571, 1536],
+       [ 976, 1169, 1071, 1917,  302,    0, 1667, 1552, 1479, 1487],
+       [1129, 1481, 1204,  898, 1694, 1667,    0,  853,  875,  431],
+       [1417, 1836, 1545, 1581, 1511, 1552,  853,    0, 1431,  997],
+       [ 676,  849,  650,  605, 1571, 1479,  875, 1431,    0,  617],
+       [ 868, 1206,  933,  767, 1536, 1487,  431,  997,  617,    0]])
+ ]
 DISTANCE = np.array([[0,820,1411,770,872],[820,0,2404,624,420],[1411,2404,0,1785,2187],[770,624,1785,0,557],[872,420,2187,557,0]])  # 一个二维数组，表示不同仓库之间的distance
-
 
 S_I = 10
 S_O = 10
 
 DEMAND_MAX = 20
 
-
-
-
-
-CRITIC_OBS_DIM = 13
 EPISODE_LEN = 200
-# ALPHA=0.7
-
 
 FIXED_COST = 5
-
-# EVAL_PTH = ["./eval_data/merton/0/", "./eval_data/merton/1/", "./eval_data/merton/2/"]
-# TEST_PTH = ["./test_data/merton/0/", "./test_data/merton/1/", "./test_data/merton/2/"]
-
-
 
 
 #====================================================================================
@@ -57,13 +77,21 @@ class Env(object):
         self.lead_time = args.lead_time
         self.demand_info_for_critic=args.demand_info_for_critic
         
+        # cost parameter
+        self.H = args.H  # holding cost
+        self.R = args.R  # selling price per unit (only used for reward)
+        self.P = args.P  # penalty cost
+        self.C = args.C  # ordering cost
+        self.shipping_cost_per_distance = args.shipping_cost_per_distance
+
         self.generator_method = args.generator_method
-        self.distance = DISTANCE
+
         # 考不考虑distance不同问题
         self.homo_distance=args.homo_distance
-        if self.homo_distance:
-            self.distance = np.array([[0,1000,1000,1000,1000],[1000,0,1000,1000,1000],[1000,1000,0,1000,1000],[1000,1000,1000,0,1000],[1000,1000,1000,1000,0]])
-        
+                
+        # 设置distance
+        self.distance = DISTANCE[0 if self.homo_distance else args.distance_index][:self.agent_num,:self.agent_num]
+
         # 货到付款， 还是先钱后货
         self.pay_first= args.pay_first
 
@@ -128,7 +156,7 @@ class Env(object):
 
     # distance->transshipping price    
     def phi(self, distance):
-        return 0.0005*distance
+        return self.shipping_cost_per_distance*distance
     
     def get_training_data(self):
         """
@@ -593,54 +621,6 @@ class Env(object):
         self.reward_cum=[self.reward_cum[i]+self.reward[i] for i in range(self.agent_num)]
         return processed_rewards
     
-    def state_update(self, action):
-        """
-        - Need to be implemented
-        - Update system state and record some states that you may need in other fuctions like get_eval_bw_res, get_orders, etc.
-        - Inputs:
-            - action: list, processed actions for each actor
-            - Modify the inputs as you need
-        - Outputs:
-            - rewards: list, rewards for each actors (typically one-period costs for all actors)
-        """
-        all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
-        cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
-        rewards=[]
-        self.step_num+=1
-        for i in range(self.agent_num):
-            self.order[i].append(action[i][0])
-            self.transship_request[i]=action[i][1]
-            inv_start=self.inventory[i]+self.order[i][0]+self.transship_request[i]
-            self.inventory_start[i]=inv_start
-            reward= -C[i]*(sum(action[i]))-S[i]*max(self.transship_request[i],0)-H[i]*max(inv_start-cur_demand[i],0)+P[i]*min(inv_start-cur_demand[i],0)-FIXED_COST*(1 if action[i][0]>0 else 0)
-            
-            # transship 收益分配
-            transship_revenue = 0
-            if self.transship_revenue_method == 'constant':
-                transship_revenue = -self.constant_transship_revenue*self.transship_request[i]
-            elif self.transship_revenue_method == 'ratio':
-                if self.transship_request[i]>0:
-                    transship_revenue = -(1-self.ratio_transship_revenue)*all_transship_revenue[i]
-                else:
-                    transship_revenue = -(self.transship_request[i]/transship_volume) * sum(all_transship_revenue)*(1-self.ratio_transship_revenue)
-            else:
-                raise Exception('wrong transship revenue aloocated method')
-            reward+=transship_revenue
-
-            # 最后一天将仓库内剩余货品按成本价折算
-            if self.step_num > EPISODE_LEN-1:
-                reward=reward+(H[i]+C[i])*max(inv_start-cur_demand[i],0)
-            rewards.append(reward)
-
-            self.reward_selfish_cum[i]+=reward
-            self.reward_selfish[i]=reward
-            
-            self.shortage[i]=cur_demand[i]-inv_start
-            self.inventory[i]=max(inv_start-cur_demand[i],0.)
-            self.action_history[i].append(action[i])
-            self.order[i]=self.order[i][1:]
-            
-        return rewards
     
     # transship的收益
     def get_transship_revenue(self,action):
@@ -655,7 +635,7 @@ class Env(object):
             transship_volume+=ts
             inv_start_without_transship=self.inventory[i]+self.order[i][0]
             shortage_wihout_transship = max(cur_demand[i]-inv_start_without_transship , 0)
-            transship_revenue[i] = max((-C[i]+P[i])*min(shortage_wihout_transship,ts) - S[i]*ts - H[i]*max(ts-shortage_wihout_transship,0),0)   
+            transship_revenue[i] = max((-self.C+self.P)*min(shortage_wihout_transship,ts) - self.S*ts - self.H*max(ts-shortage_wihout_transship,0),0)   
         return transship_revenue , transship_volume      
     
     # 考虑了transship供需关系，及带来的未来收益的分配模式
@@ -669,13 +649,10 @@ class Env(object):
         - Outputs:
             - rewards: list, rewards for each actors (typically one-period costs for all actors)
         """
-        # all_transship_revenue,transship_volume = self.get_transship_revenue(action) 
-        all_transship_revenue,transship_volume = 0,0
         cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         rewards_after=[]
         rewards_before = []
-        Vs = []
-        V_befores =[]
+
         self.step_num+=1
 
         # 计算transship前后收益
@@ -686,24 +663,24 @@ class Env(object):
             inv_start=self.inventory[i]+self.order[i][0]+self.transship_request[i]
             self.inventory_start[i]=inv_start
 
-            revenue_demand =cur_demand[i]*R[i] if 'reward' in self.reward_type else 0
+            revenue_demand =cur_demand[i]*self.R if 'reward' in self.reward_type else 0
             norm_drift =cur_demand[i]*self.reward_norm_multiplier if 'norm' in self.reward_type else 0 
 
             
             # 纯运费
             self.shipping_cost_pure[i] = sum([self.shipping_cost_matrix[i][j]*self.transship_matrix[i][j] if self.transship_matrix[i][j]>0 else 0 for j in range(self.agent_num)])
             # 运费+买卖货的费用
-            self.shipping_cost_all[i] = self.shipping_cost_pure[i] + C[i]*(action[i][1])
+            self.shipping_cost_all[i] = self.shipping_cost_pure[i] + self.C*(action[i][1])
 
-            self.ordering_cost[i] = (C[i]*(action[i][0])+FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (C[i]*(self.order[i][0])+FIXED_COST*(1 if self.order[i][0]>0 else 0))
+            self.ordering_cost[i] = (self.C*(action[i][0])+FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (self.C*(self.order[i][0])+FIXED_COST*(1 if self.order[i][0]>0 else 0))
             self.ordering_times[i]+=(1 if action[i][0]>0 else 0) if self.pay_first else (1 if self.order[i][0]>0 else 0)
-            self.penalty_cost[i] = -P[i]*min(inv_start-cur_demand[i],0)
-            self.holding_cost[i] = H[i]*max(inv_start-cur_demand[i],0)
+            self.penalty_cost[i] = -self.P*min(inv_start-cur_demand[i],0)
+            self.holding_cost[i] = self.H*max(inv_start-cur_demand[i],0)
             # transship 后的reward 
             reward= -self.ordering_cost[i]-self.shipping_cost_all[i]-self.holding_cost[i]-self.penalty_cost[i]+revenue_demand+norm_drift
             
             # transship前的reward
-            reward_before= -self.ordering_cost[i]-H[i]*max(inv_start_before-cur_demand[i],0)+P[i]*min(inv_start_before-cur_demand[i],0)+revenue_demand+norm_drift
+            reward_before= -self.ordering_cost[i]-self.H*max(inv_start_before-cur_demand[i],0)+self.P*min(inv_start_before-cur_demand[i],0)+revenue_demand+norm_drift
             
             self.demand_fulfilled[i] =  min(inv_start,cur_demand[i])
             self.shortage[i]=cur_demand[i]-inv_start
@@ -711,25 +688,12 @@ class Env(object):
             self.action_history[i].append(action[i])
             self.order[i]=self.order[i][1:]
 
-            # transship 前的未来收益，可能要考虑gamma
-            V  = 0 
-            # transship 后的未来收益
-            V_before = 0 
-            Vs.append(V)
-            V_befores.append(V_before)
-
             # 最后一天将仓库内剩余货品按成本价折算
             if self.step_num > EPISODE_LEN-1:
-                reward=reward+(C[i])*max(inv_start-cur_demand[i],0)
-                reward_before=reward_before+(C[i])*max(inv_start-cur_demand[i],0)
+                reward=reward+(self.C)*max(inv_start-cur_demand[i],0)
+                reward_before=reward_before+(self.C)*max(inv_start-cur_demand[i],0)
             rewards_after.append(reward)
             rewards_before.append(reward_before)
-
-        transship_revenue = np.array(rewards_after) + self.gamma * np.array(Vs) - np.array(rewards_before) + self.gamma * np.array(V_befores)
-        transship_revenue_sum = np.sum(transship_revenue) 
-        transship_intend_p = sum([t if t>0 else 0 for t in self.transship_intend])
-        transship_intend_n = sum([-t if t<0 else 0 for t in self.transship_intend])
-        ratio_pn = transship_intend_n/(transship_intend_p+transship_intend_n+1e-10)
 
         rewards=[]
         # 把transship收益分了
@@ -740,22 +704,6 @@ class Env(object):
             transship_reallocate = 0
             if self.transship_revenue_method == 'constant':
                 transship_reallocate = -self.constant_transship_revenue*self.transship_request[i]
-            elif self.transship_revenue_method == 'ratio':
-                if self.transship_request[i]>0:
-                    transship_reallocate = -(1-self.ratio_transship_revenue)*all_transship_revenue[i]
-                else:
-                    transship_reallocate = -(self.transship_request[i]/transship_volume) * sum(all_transship_revenue)*(1-self.ratio_transship_revenue)
-            elif self.transship_revenue_method == 'market_ratio':
-                if self.transship_intend[i] >= 0:
-                    # volume_ratio = self.transship_intend[i]/transship_intend_p
-                    volume_ratio = self.transship_request[i]/transship_volume
-                    revenue_allocated = transship_revenue_sum*ratio_pn*volume_ratio
-                elif self.transship_intend[i]<0:
-                    # volume_ratio = -self.transship_intend[i]/transship_intend_n
-                    volume_ratio = -self.transship_request[i]/transship_volume
-                    revenue_allocated = transship_revenue_sum*(1-ratio_pn)*volume_ratio
-
-                transship_reallocate = revenue_allocated - transship_revenue[i]
             else:
                 raise Exception('wrong transship revenue allocated method')
             self.shipping_cost_all[i]-=transship_reallocate
