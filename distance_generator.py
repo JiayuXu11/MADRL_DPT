@@ -22,7 +22,7 @@ scaled_matrix = (dist_matrix - d_min) / (d_max - d_min) * (2000 - 300) + 300
 np.fill_diagonal(scaled_matrix, 0)
 scaled_matrix = np.round(scaled_matrix).astype(int)
 
-matrix = np.full((n,n),1000)
-np.fill_diagonal(matrix, 0)
-scaled_matrix = np.round(matrix).astype(int)
-print(repr(matrix))
+# matrix = np.full((n,n),1000)
+# np.fill_diagonal(matrix, 0)
+# scaled_matrix = np.round(matrix).astype(int)
+# print(repr(matrix))
