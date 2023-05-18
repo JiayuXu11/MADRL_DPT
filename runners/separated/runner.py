@@ -169,7 +169,7 @@ class CRunner(Runner):
         print("Training finished because of finish all the episodes: " + str(episodes) + " episodes")
         self.model_dir=str(self.run_dir / 'models')
         self.restore()
-        test_reward,dict_write_test=self.eval(test_tf=True)
+        test_reward,dict_write_test=self.eval_para(test_tf=True)
         print("Best Eval average cost: ", best_reward, " Eval cost composition: ", best_dict_write, " Best Test average reward: ", test_reward, " Test cost composition: ", dict_write_test)
         return best_reward,best_dict_write, test_reward, dict_write_test
 
