@@ -467,6 +467,7 @@ class CRunner(Runner):
         shipping_cost_pure=0
         ordering_times=0
         demand_fulfilled = 0
+        transship_amount_all = 0
 
         eval_obs, eval_obs_critic = envs.reset(self.all_args.norm_input)
         
@@ -527,6 +528,7 @@ class CRunner(Runner):
                 eval_info = eval_infos[eval_index]
 
                 for a in range(self.num_agents):
+                    transship_amount_all+=eval_info[a]['transship'] if eval_info[a]['transship']>0 else 0 
                     penalty_cost_all+=eval_info[a]['penalty_cost']
                     ordering_cost_all+=eval_info[a]['ordering_cost']
                     holding_cost_all+=eval_info[a]['holding_cost']
@@ -562,7 +564,7 @@ class CRunner(Runner):
                                                                     global_step= step)
         num_all= n_eval_rollout_threads*self.episode_length*self.num_agents
         all_demand_mean=self.demand_mean_test if test_tf else self.demand_mean_val
-        dict_cost={"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/n_eval_rollout_threads/self.num_agents,'fill_rate':demand_fulfilled/num_all/all_demand_mean}
+        dict_cost={"transship_amount_all": transship_amount_all/num_all,"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/n_eval_rollout_threads/self.num_agents,'fill_rate':demand_fulfilled/num_all/all_demand_mean}
         norm_reward_drift = self.all_args.reward_norm_multiplier*all_demand_mean if 'norm' in self.all_args.reward_type else 0 
         # print(time.time()-s_t)
         return np.mean(overall_reward)-norm_reward_drift, dict_cost

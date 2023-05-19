@@ -39,6 +39,8 @@ if __name__ == "__main__":
     # 自动调num_steps
     all_args.num_env_steps = all_args.num_episodes * all_args.episode_length * all_args.n_rollout_threads
 
+
+    # all_args.experiment_name='cat_try'
     # all_args.cat_self=True
     # all_args.hidden_size = [64,128,256,256]
     # all_args.use_centralized_V=False
