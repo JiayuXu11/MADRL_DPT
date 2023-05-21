@@ -9,7 +9,20 @@ from config import get_config
 from envs.env_wrappers_continue import SubprocVecEnv, DummyVecEnv,EvalVecEnv
 from runners.separated.runner import CRunner as Runner
 import yaml
+import random
 
+
+def seed_torch(seed=0):
+    random.seed(seed)   # Python的随机性
+    os.environ['PYTHONHASHSEED'] = str(seed)    # 设置Python哈希种子，为了禁止hash随机化，使得实验可复现
+    np.random.seed(seed)   # numpy的随机性
+    torch.manual_seed(seed)   # torch的CPU随机性，为CPU设置随机种子
+    torch.cuda.manual_seed(seed)   # torch的GPU随机性，为当前GPU设置随机种子
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.   torch的GPU随机性，为所有GPU设置随机种子
+    torch.backends.cudnn.benchmark = False   # if benchmark=True, deterministic will be False
+    torch.backends.cudnn.deterministic = True   # 选择确定性算法
+
+seed_torch()
 def make_train_env(all_args):
     return SubprocVecEnv(all_args)
 
@@ -39,8 +52,12 @@ if __name__ == "__main__":
     # 自动调num_steps
     all_args.num_env_steps = all_args.num_episodes * all_args.episode_length * all_args.n_rollout_threads
 
-
-    # all_args.experiment_name='cat_try'
+    # all_args.reset_episode=1
+    # all_args.n_no_improvement_thres = 100
+    # all_args.banana=1
+    # all_args.experiment_name='thres_50'
+    # all_args.experiment_name='thres_50_banana_1'
+    # all_args.log_interval = 1
     # all_args.cat_self=True
     # all_args.hidden_size = [64,128,256,256]
     # all_args.use_centralized_V=False
@@ -103,9 +120,11 @@ if __name__ == "__main__":
             open(seed_res_record_file, 'a+')
 
         # seed
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        np.random.seed(seed)
+        # torch.manual_seed(seed)
+        # torch.cuda.manual_seed_all(seed)
+        # np.random.seed(seed)
+        # random.seed(seed)
+        seed_torch(seed)
         # 手动调节波动
         # all_args.std_y_coef=[j/2**4 for j in all_args.std_y_coef]
         # all_args.lr=all_args.lr/2**4

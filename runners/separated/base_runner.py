@@ -7,6 +7,7 @@ import torch
 from tensorboardX import SummaryWriter
 from utils.separated_buffer import SeparatedReplayBuffer
 from utils.util import update_linear_schedule,del_folder
+import torch.nn as nn
 
 def _t2n(x):
     return x.detach().cpu().numpy()
@@ -20,7 +21,10 @@ class Runner(object):
         self.test_envs = config['test_envs']
         self.device = config['device']
         self.num_agents = config['num_agents']
-
+        # 网络初始化
+        self.reset_episode=self.all_args.reset_episode
+        self._use_orthogonal=self.all_args.use_orthogonal
+        self.use_ReLU = self.all_args.use_ReLU
         # parameters
         self.env_name = self.all_args.env_name
         self.algorithm_name = self.all_args.algorithm_name
@@ -124,6 +128,36 @@ class Runner(object):
 
         if self.model_dir is not None:
             self.restore_normalizer()
+
+    def reset_all_weight(self):
+        def weight_init(m):
+            classname = m.__class__.__name__
+            if (classname.find('Conv2d') != -1) or (classname.find('Linear') != -1):
+                gain = nn.init.calculate_gain(['tanh', 'relu'][self.use_ReLU])
+                if self._use_orthogonal:
+                    nn.init.orthogonal_(m.weight.data,gain)
+                else:
+                    nn.init.xavier_normal_(m.weight.data,gain)
+                nn.init.constant_(m.bias.data, 0.0)
+            elif (classname.find('GRU') != -1) or (classname.find('LSTM') != -1):
+                for name, param in m.named_parameters():
+                    if 'bias' in name:
+                        nn.init.constant_(param, 0)
+                    elif 'weight' in name:
+                        if self._use_orthogonal:
+                            nn.init.orthogonal_(param)
+                        else:
+                            nn.init.xavier_uniform_(param)
+        for agent_id in range(self.num_agents):
+            if self.use_single_network:
+                self.policy[agent_id].model.apply(weight_init)
+            else:
+                self.policy[agent_id].actor.apply(weight_init)
+                self.policy[agent_id].critic.apply(weight_init)
+
+    
+
+
     # 给需求路径，算平均需求
     def get_mean_demand(self,dir):
         path = [dir+'/{}/'.format(i) for i in range(self.num_involver)]
@@ -164,7 +198,7 @@ class Runner(object):
             next_value = _t2n(next_value)
             self.buffer[agent_id].compute_returns(next_value, self.trainer[agent_id].value_normalizer)
 
-    def train(self):
+    def train(self,just_reset=False):
         train_infos = []
         # random update order
 
@@ -183,7 +217,7 @@ class Runner(object):
                                                             self.buffer[agent_id].masks[:-1].reshape(-1, *self.buffer[agent_id].masks.shape[2:]),
                                                             available_actions,
                                                             self.buffer[agent_id].active_masks[:-1].reshape(-1, *self.buffer[agent_id].active_masks.shape[2:]))
-            train_info = self.trainer[agent_id].train(self.buffer[agent_id])
+            train_info = self.trainer[agent_id].train(self.buffer[agent_id],just_reset=just_reset)
 
             new_actions_logprob, _ =self.trainer[agent_id].policy.actor.evaluate_actions(self.buffer[agent_id].obs[:-1].reshape(-1, *self.buffer[agent_id].obs.shape[2:]),
                                                             self.buffer[agent_id].rnn_states[0:1].reshape(-1, *self.buffer[agent_id].rnn_states.shape[2:]),

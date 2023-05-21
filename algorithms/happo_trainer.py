@@ -93,7 +93,7 @@ class HAPPO():
 
         return value_loss
 
-    def ppo_update(self, sample, update_actor=True):
+    def ppo_update(self, sample, update_actor=True, just_reset=False):
         """
         Update actor and critic networks.
         :param sample: (Tuple) contains data batch with which to update networks.
@@ -145,6 +145,10 @@ class HAPPO():
         
         surr1 = imp_weights * adv_targ
         surr2 = torch.clamp(imp_weights, clip_lb, clip_ub) * adv_targ
+        
+        # 如果刚刚重置了网络参数，就让他先自由
+        if just_reset:
+            surr2 = surr1
         # print(torch.isinf(torch.min(surr1, surr2)).any())
 
         if self._use_policy_active_masks:
@@ -183,7 +187,7 @@ class HAPPO():
 
         return value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights
 
-    def train(self, buffer, update_actor=True):
+    def train(self, buffer, update_actor=True,just_reset=False):
         """
         Perform a training update using minibatch GD.
         :param buffer: (SharedReplayBuffer) buffer containing training data.
@@ -216,7 +220,7 @@ class HAPPO():
         train_info['critic_grad_norm'] = 0
         train_info['ratio'] = 0
 
-        for _ in range(self.ppo_epoch):
+        for _ in range(self.ppo_epoch if not just_reset else 2*self.ppo_epoch):
             if self._use_recurrent_policy:
                 data_generator = buffer.recurrent_generator(advantages, self.num_mini_batch, self.data_chunk_length)
             elif self._use_naive_recurrent:
@@ -225,7 +229,7 @@ class HAPPO():
                 data_generator = buffer.feed_forward_generator(advantages, self.num_mini_batch)
 
             for sample in data_generator:
-                value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights = self.ppo_update(sample, update_actor=update_actor)
+                value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights = self.ppo_update(sample, update_actor=update_actor,just_reset=just_reset)
 
                 train_info['value_loss'] += value_loss.item()
                 train_info['policy_loss'] += policy_loss.item()

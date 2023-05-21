@@ -104,7 +104,11 @@ class CRunner(Runner):
 
             if self.all_args.training_bf:
                 self.compute()
-                train_infos = self.train()
+                if episode == self.reset_episode:
+                    self.reset_all_weight()
+                    train_infos = self.train(just_reset=True)
+                else:
+                    train_infos = self.train()
                 for i,train_info in enumerate(train_infos):
                     self.writter.add_scalars('training process_{}'.format(i), train_info, episode)
 

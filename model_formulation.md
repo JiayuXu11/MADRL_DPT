@@ -1,7 +1,9 @@
+
 $N\text{ - agent num}, \\
 T\text{ - episode length}\\
 l\text{ - lead time }\\
 c_i\text{ - order cost per item}\\
+K_i\text{ - fixed cost for ordering}\\
 h_i\text{ - holding cost per item}\\ p_i\text{ - penalty cost per item}\\
 q^t_i\text{ - order quantity}\\
 I^t_i\text{ - inventory after "pipline stock" arrive and transship}\\
@@ -12,14 +14,14 @@ M_{ij}^t\text{ - amount of transshipment from i to j}\\
 (q_{i}^{t-1},q_{i}^{t-2},...,q_{i}^{t-l}) \text{ -  in transit orders for agent i}$
 
 ## central:
- $$C_{all}^t = \sum_{i = 1}^N (c_i q^t_i  +  h_i [I^t_i - d^t_i]^+ + p_i [d^t_i - I^t_i]^+ +\sum_{j = 1}^N  TC_{ij}^t(M_{ji}^t)^+ )$$
+ $$C_{all}^t = \sum_{i = 1}^N (c_i q^t_i  + K_i \mathbb{I}(q^t_i>0)+  h_i [I^t_i - d^t_i]^+ + p_i [d^t_i - I^t_i]^+ +\sum_{j = 1}^N  TC_{ij}^t(M_{ji}^t)^+ )$$
  $I^t_i = \hat{I}^{t-1}_i + q_{i}^{t-l} - \sum_{j = 1}^N M_{ij}$
  $\hat{I}^{t}_i = (I^{t}_i-d_i^t)^+$
 
 
 ## decentral:
 $r \text{ - revenue from transshiping per unit}$
- $$C_i^t =  c_i q^t_i  +  h_i [I^t_i - d^t_i]^+ + p_i [d^t_i - I^t_i]^+ +\sum_{j = 1}^N  TC_{ij}^t(M_{ji}^t)^+ -\sum_{j = 1}^N  rM_{ij}^t$$
+ $$C_i^t =  c_i q^t_i  + K_i \mathbb{I}(q^t_i>0) +  h_i [I^t_i - d^t_i]^+ + p_i [d^t_i - I^t_i]^+ +\sum_{j = 1}^N  TC_{ij}^t(M_{ji}^t)^+ -\sum_{j = 1}^N  rM_{ij}^t$$
  $I^t_i = \hat{I}^{t-1}_i + q_{i}^{t-l} - \sum_{j = 1}^N M_{ij}$
  $\hat{I}^{t}_i = (I^{t}_i-d_i^t)^+$
 

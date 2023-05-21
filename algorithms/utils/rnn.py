@@ -11,6 +11,13 @@ class RNNLayer(nn.Module):
         self._use_orthogonal = use_orthogonal
 
         self.rnn = nn.GRU(inputs_dim, outputs_dim, num_layers=self._recurrent_N)
+
+        # # 一些实验（开始）
+        # def print_name(m):
+        #     classname = m.__class__.__name__
+        #     print(classname,classname.find('Linear'))
+        # self.rnn.apply(print_name)
+        # # 一些实验（结束）
         for name, param in self.rnn.named_parameters():
             if 'bias' in name:
                 nn.init.constant_(param, 0)

@@ -325,4 +325,7 @@ def get_config():
     parser.add_argument("--distance_index", type=int, 
                         default=0, choices=[0, 1, 2, 3] ,help="用哪一个distance矩阵,0表示homo_distance")
     
+    parser.add_argument("--reset_episode", type=int, 
+                        default=99999 ,help="训练指定次数后，重置所有网络的weight")
+    
     return parser
