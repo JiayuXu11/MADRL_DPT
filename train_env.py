@@ -51,7 +51,9 @@ if __name__ == "__main__":
     all_args.train_episode_length=all_args.episode_length-all_args.lead_time-1
     # 自动调num_steps
     all_args.num_env_steps = all_args.num_episodes * all_args.episode_length * all_args.n_rollout_threads
-
+    
+    # all_args.homo_distance = True
+    all_args.mini_pooling["flag"] = True
     # all_args.reset_episode=1
     # all_args.n_no_improvement_thres = 100
     # all_args.banana=1

@@ -300,6 +300,9 @@ def get_config():
     parser.add_argument("--homo_distance", type=t_or_f, 
                         default=False, help="是否认为零售商间距离一致")
     
+    parser.add_argument("--mini_pooling", type=t_or_f, 
+                        default={"flag":False, "threshold":200, "how":"even"}, help="设置mini_pooling机制, how: even or ratio")
+    
     parser.add_argument("--pay_first", type=t_or_f, 
                         default=True, help="若为True, 则订货时付钱, False则到货到了再付钱")
     

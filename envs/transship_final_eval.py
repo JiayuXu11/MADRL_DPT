@@ -88,6 +88,7 @@ class Env(object):
 
         # 考不考虑distance不同问题
         self.homo_distance=args.homo_distance
+        self.mini_pooling = args.mini_pooling
                 
         # 设置distance
         self.distance = DISTANCE[0 if self.homo_distance else args.distance_index][:self.agent_num,:self.agent_num]
@@ -373,6 +374,8 @@ class Env(object):
 
         if self.homo_distance:
             self.transship_merge_homo(transship_amounts)
+        elif self.mini_pooling["flag"]:
+            self.transship_merge_mp(transship_amounts, threshold=self.mini_pooling['threshold'], how=self.mini_pooling['how'])
         else:
             for a1,a2 in self.shipping_order:
                 if a1<self.agent_num and a2<self.agent_num:
@@ -429,6 +432,86 @@ class Env(object):
                     transship_amounts[a1]-=self.transship_matrix[a1][a2]
                     transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
+    # mini_pooling 撮合机制 
+    def transship_merge_mp(self, transship_amounts, threshold, how):
+        # 撮合transship
+        def mini_pooling(distance_matrix, transship_amounts, thres):
+            n = len(transship_amounts)
+            possible_pairs = []
+
+            # Find possible transship pairs
+            for i in range(n):
+                for j in range(n):
+                    if i != j and transship_amounts[i] < 0 and transship_amounts[j] > 0:
+                        possible_pairs.append((i, j, distance_matrix[i][j]))
+
+            # Sort pairs by distance
+            possible_pairs.sort(key=lambda x: x[2])
+
+            # Filter pairs within the distance threshold
+            mini_pool_pairs = [pair[:2] for pair in possible_pairs if pair[2] - possible_pairs[0][2] <= thres]
+
+            if not mini_pool_pairs:
+                return False
+            
+            return mini_pool_pairs
+        
+        while (mini_pool_pairs := mini_pooling(self.distance, transship_amounts, threshold)):
+            
+            while mini_pool_pairs:
+
+                if how == 'even':
+                    curr_pair = random.choice(mini_pool_pairs)
+                elif how == 'ratio':
+                    weights = [transship_amounts[pair[1]] for pair in mini_pool_pairs]
+                    curr_pair = random.choice(mini_pool_pairs, weights=weights, k=1)
+                self.transship_matrix[curr_pair[0]][curr_pair[1]] -= 1
+                self.transship_matrix[curr_pair[1]][curr_pair[0]] += 1
+                transship_amounts[curr_pair[0]] += 1
+                transship_amounts[curr_pair[1]] -= 1
+                if transship_amounts[curr_pair[0]] == 0:
+                    mini_pool_pairs = list(filter(lambda x: curr_pair[0] not in x, mini_pool_pairs))
+                if transship_amounts[curr_pair[1]] == 0:
+                    mini_pool_pairs = list(filter(lambda x: curr_pair[1] not in x, mini_pool_pairs))
+                
+            
+            
+            # transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
+            # transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
+        # # 撮合transship
+        # # ## 1. 按比例分配,和下面那个挨个砍一刀一起用才是完整版。效果不好，感觉还不如挨个砍一刀。
+        # if self.ratio_transsship:
+        #     transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
+        #     transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
+        #     if sum(transship_amounts) < 0:
+        #         ratio = -transship_pos/transship_neg
+        #         for i in range(len(transship_amounts)):
+        #             transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]<0 else transship_amounts[i]
+        #     elif sum(transship_amounts) > 0:
+        #         ratio = -transship_neg/transship_pos
+        #         for i in range(len(transship_amounts)):
+        #             transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]>0 else transship_amounts[i]
+        # # 2. 若仍未撮合成功，则挨个砍一刀
+        # i=0
+        # while(sum(transship_amounts) != 0):
+        #     if sum(transship_amounts) > 0:
+        #         if (transship_amounts[i] > 0):
+        #             transship_amounts[i] += -1
+        #     elif sum(transship_amounts) < 0:
+        #         if (transship_amounts[i] < 0):
+        #             transship_amounts[i] += 1
+        #     i+=1
+        #     i=0 if i > self.agent_num-1 else i
+        
+        # 转换为transship_matrix格式
+        # for a1 in range(self.agent_num):
+        #     for a2 in range(self.agent_num):
+        #         if transship_amounts[a1]*transship_amounts[a2]<0:
+        #             tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
+        #             self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
+        #             self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
+        #             transship_amounts[a1]-=self.transship_matrix[a1][a2]
+        #             transship_amounts[a2]-=self.transship_matrix[a2][a1]
         
     def get_step_obs(self, info_sharing, obs_step, demand_today=True):
         """
