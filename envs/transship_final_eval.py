@@ -456,8 +456,10 @@ class Env(object):
             
             return mini_pool_pairs
         
-        while (mini_pool_pairs := mini_pooling(self.distance, transship_amounts, threshold)):
-            
+        while True:
+            mini_pool_pairs = mini_pooling(self.distance, transship_amounts, threshold)
+            if not mini_pool_pairs:
+                break
             while mini_pool_pairs:
 
                 if how == 'even':
