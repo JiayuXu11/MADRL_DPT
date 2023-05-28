@@ -181,7 +181,7 @@ class Env(object):
             demand_list = [generator.uniform(EPISODE_LEN,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
             # demand_list=[generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX),generator.uniform(EPISODE_LEN,DEMAND_MAX)]
         elif(self.generator_method=='shanshu'):
-             demand_list = [generator.shanshu(EPISODE_LEN,DEMAND_MAX,0).demand_list for _ in range(self.agent_num)]
+             demand_list = [generator.shanshu(EPISODE_LEN,DEMAND_MAX,i).demand_list for i in range(self.agent_num)]
             #  demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
         return demand_list
 
