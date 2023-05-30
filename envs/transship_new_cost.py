@@ -127,7 +127,7 @@ class Env(object):
                 with open(self.eval_path[j] + files[i], "rb") as f:
                     lines = f.readlines()
                     for line in lines:
-                        data.append(int(line))
+                        data.append(float(line))
                 eval_data_i.append(data)
             eval_data.append(eval_data_i)
         # print(np.array(eval_data).shape)
@@ -155,7 +155,7 @@ class Env(object):
                 with open(self.test_path[j] + files[i], "rb") as f:
                     lines = f.readlines()
                     for line in lines:
-                        data.append(int(line))
+                        data.append(float(line))
                 test_data_i.append(data)
             test_data.append(test_data_i)
         # print(np.array(test_data).shape)

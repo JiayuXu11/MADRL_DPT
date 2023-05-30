@@ -28,7 +28,7 @@ def get_eval_data():
             with open(EVAL_PTH[j] + files[i], "rb") as f:
                 lines = f.readlines()
                 for line in lines:
-                    data.append(int(line))
+                    data.append(float(line))
             eval_data_i.append(data)
         eval_data.append(eval_data_i)
     # print(np.array(eval_data).shape)

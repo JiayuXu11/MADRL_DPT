@@ -66,7 +66,7 @@ def get_eval_data():
             with open(EVAL_PTH[j] + files[i], "rb") as f:
                 lines = f.readlines()
                 for line in lines:
-                    data.append(int(line))
+                    data.append(float(line))
             eval_data_i.append(data)
         eval_data.append(eval_data_i)
     # print(np.array(eval_data).shape)
@@ -94,7 +94,7 @@ def get_test_data():
             with open(TEST_PTH[j] + files[i], "rb") as f:
                 lines = f.readlines()
                 for line in lines:
-                    data.append(int(line))
+                    data.append(float(line))
             test_data_i.append(data)
         test_data.append(test_data_i)
     # print(np.array(test_data).shape)

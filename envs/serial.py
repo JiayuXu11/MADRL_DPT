@@ -58,7 +58,7 @@ def get_eval_data():
         with open(EVAL_PTH + file, "rb") as f:
             lines = f.readlines()
             for line in lines:
-                data.append(int(line))
+                data.append(float(line))
         eval_data.append(data)
     return n_eval, eval_data
 

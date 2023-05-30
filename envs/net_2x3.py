@@ -49,13 +49,13 @@ def get_eval_data():
         with open(EVAL_PTH[0] + files_0[i], "rb") as f:
             lines = f.readlines()
             for line in lines:
-                data_0.append(int(line))
+                data_0.append(float(line))
         
         data_1 = []
         with open(EVAL_PTH[1] + files_1[i], "rb") as f:
             lines = f.readlines()
             for line in lines:
-                data_1.append(int(line))
+                data_1.append(float(line))
         eval_data.append([data_0, data_1])
 
     return n_eval, eval_data
