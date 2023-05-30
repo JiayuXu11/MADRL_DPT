@@ -172,7 +172,7 @@ class Runner(object):
                 with open(path[j] + files[i], "rb") as f:
                     lines = f.readlines()
                     for line in lines[:self.episode_length]:
-                        sum_demand+=int(line)
+                        sum_demand+=float(line)
         mean_demand=sum_demand/n_eval/len(path)/self.episode_length
         return mean_demand
 
