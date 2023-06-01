@@ -77,8 +77,8 @@ if __name__ == "__main__":
     # all_args.compute_pure_returns=True
     # all_args.instant_info_sharing=True
 
-    # all_args.action_type='multi_discrete'
-    # all_args.central_controller =True
+    all_args.action_type='multi_discrete'
+    all_args.central_controller =True
 
 
 

@@ -71,7 +71,8 @@ class CRunner(Runner):
 
                     # Obser reward and next obs
 
-                    obs, obs_critic, rewards, dones, infos = self.envs.step(actions)
+                    actions_e = np.array(actions).reshape(self.n_rollout_threads,self.all_args.num_involver,-1)
+                    obs, obs_critic, rewards, dones, infos = self.envs.step(actions_e)
 
                 elif self.all_args.algorithm_name == 'heuristic1':
                     return 
@@ -307,155 +308,6 @@ class CRunner(Runner):
                 agent_k = "agent%i/" % agent_id + k
                 self.writter.add_scalars(agent_k, {agent_k: v}, total_num_steps)
 
-    
-
-    @torch.no_grad()
-    def eval(self, test_tf=False):
-        
-        # 把之前的tensorboard数据清除掉，不然会同时显示，啥也看不清
-        self.clear_tensorboard(test_tf)
-        overall_reward = []
-        eval_num = self.eval_envs.get_eval_num()
-
-        penalty_cost_all=0
-        ordering_cost_all=0
-        holding_cost_all=0
-        shipping_cost_all=0
-        shipping_cost_pure=0
-        ordering_times=0
-        demand_fulfilled = 0
-
-        for eval_index in range(eval_num):
-            eval_obs, eval_obs_critic = self.eval_envs.reset(test_tf,self.all_args.norm_input)
-            
-            eval_rnn_states = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
-            eval_rnn_states_critic = np.zeros((self.n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
-            eval_masks = np.ones((self.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
-
-            rewards_log=[]
-            eval_values_steps=[[] for i in range(self.episode_length)]
-
-            for eval_step in range(self.episode_length):
-                
-                s_t =time.time()
-
-                eval_actions_collector = []
-                eval_values=[]
-                for agent_id in range(self.num_agents):
-                    self.trainer[agent_id].policy.hist_demand=self.eval_envs.get_hist_demand()[0][agent_id]
-                    self.trainer[agent_id].prep_rollout()
-                    eval_value,eval_actions,_,temp_rnn_state,temp_rnn_state_critic\
-                        =self.trainer[agent_id].policy.get_actions(eval_obs_critic[:,agent_id],
-                                                        eval_obs[:,agent_id],
-                                                        eval_rnn_states[:,agent_id],
-                                                        eval_rnn_states_critic[:,agent_id],
-                                                        eval_masks[:,agent_id],
-                                                        None,
-                                                        deterministic=True)
-                    eval_values.append(float(eval_value[0][0].detach().cpu()))
-
-
-                    # eval_actions, temp_rnn_state = \
-                    #     self.trainer[agent_id].policy.act(eval_obs[:,agent_id],
-                    #                             eval_rnn_states[:,agent_id],
-                    #                             eval_masks[:,agent_id],
-                    #                             None,
-                    #                             deterministic=True)
-                    eval_rnn_states[:,agent_id]=_t2n(temp_rnn_state)
-                    eval_rnn_states_critic[:,agent_id]=_t2n(temp_rnn_state_critic)
-                    action = eval_actions.detach().cpu().numpy()
-                    eval_actions_collector.append(action)
-                    # if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
-                    #     for i in range(self.envs.action_space[agent_id].shape):
-                    #         uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i]]
-                    #         # print(np.where(uc_action_env >= 1))
-                    #         if i == 0:
-                    #             action_env = uc_action_env
-                    #         else:
-                    #             action_env = np.concatenate((action_env, uc_action_env), axis=1)
-                    #             # print(np.where(action_env >= 1))
-                    # elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
-                    #     action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action], 1)
-                    # else:
-                    #     action_env=action
-                    #     # raise NotImplementedError
-
-                    # temp_actions_env.append(action_env)
-
-                end_t =time.time()
-                print('get_action',end_t-s_t)
-
-                s_t =time.time()
-                eval_values_steps[eval_step]=eval_values
-                eval_actions = np.array(eval_actions_collector).transpose(1,0,2)
-                # eval_actions_env = []
-                # for i in range(self.n_eval_rollout_threads):
-                #     eval_one_hot_action_env = []
-                #     for eval_temp_action_env in temp_actions_env:
-                #         eval_one_hot_action_env.append(eval_temp_action_env[i])
-                #         if self.all_args.central_controller:
-                #             eval_one_hot_action_env = eval_temp_action_env[i].reshape(self.all_args.num_involver,-1)
-                #             # print(np.where(eval_one_hot_action_env >= 1))
-                #     eval_actions_env.append(eval_one_hot_action_env)
-
-                # Obser reward and next obs
-                eval_obs,eval_obs_critic, eval_rewards, eval_dones, eval_infos = self.eval_envs.step(eval_actions)
-
-                end_t =time.time()
-                print('step',end_t-s_t)
-                s_t = time.time()
-
-                eval_available_actions = None
-
-                overall_reward.append(np.mean(eval_rewards))
-                rewards_log.append(eval_rewards[0])
-
-                eval_dones_env = np.all(eval_dones, axis=1)
-
-                eval_rnn_states[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
-                eval_rnn_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
-                eval_masks = np.ones((self.all_args.n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
-                eval_masks[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
-
-                # 统计不同cost
-                for a in range(self.num_agents):
-                    penalty_cost_all+=eval_infos[0][a]['penalty_cost']
-                    ordering_cost_all+=eval_infos[0][a]['ordering_cost']
-                    holding_cost_all+=eval_infos[0][a]['holding_cost']
-                    shipping_cost_all+=eval_infos[0][a]['shipping_cost_all']
-                    shipping_cost_pure+=eval_infos[0][a]['shipping_cost_pure']
-                    demand_fulfilled+= eval_infos[0][a]['demand_fulfilled']
-                    if eval_step == self.episode_length-1:
-                        ordering_times += eval_infos[0][a]['ordering_times']
-
-                # 写入tensorboard
-                if eval_index<3:
-                    for agent_id in range(self.num_involver):
-                        self.writter.add_scalars(main_tag='{eval_or_test}_{eval_index}/Execution_{agent_id}'.format(eval_or_test='test' if test_tf else 'eval',eval_index=eval_index,agent_id=agent_id),
-                                                tag_scalar_dict=eval_infos[0][agent_id],global_step= eval_step)
-
-                print('write',end_t-s_t)
-
-            rewards_log=np.array(rewards_log).reshape((self.episode_length,self.num_involver))
-            if eval_index<3:
-                eval_returns=np.zeros((self.episode_length + 1,self.num_involver), dtype=np.float32)
-                eval_returns[-1] = 0
-                for step in reversed(range(rewards_log.shape[0])):
-                    eval_returns[step] = eval_returns[step + 1] * self.all_args.gamma  + rewards_log[step]
-                    for agent_id in range(self.num_agents):
-                                est_V=eval_values_steps[step][agent_id]
-                                if self.trainer[agent_id]._use_popart or self.trainer[agent_id]._use_valuenorm:
-                                    est_V=self.trainer[agent_id].value_normalizer.denormalize(np.array([est_V]))[0]
-                                self.writter.add_scalars(main_tag='{eval_or_test}_{eval_index}/Value_{agent_id}'.format(eval_or_test='test' if test_tf else 'eval',eval_index=eval_index,agent_id=agent_id),
-                                                        tag_scalar_dict={'est_V': est_V,
-                                                                        'real_V': eval_returns[step][agent_id],},
-                                                                        global_step= step)
-        num_all= eval_num*self.episode_length*self.num_agents
-        all_demand_mean=self.demand_mean_test if test_tf else self.demand_mean_val
-        dict_cost={"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/eval_num/self.num_agents,'fill_rate':demand_fulfilled/num_all/all_demand_mean}
-        norm_reward_drift = self.all_args.reward_norm_multiplier*all_demand_mean if 'norm' in self.all_args.reward_type else 0 
-        return np.mean(overall_reward)-norm_reward_drift, dict_cost
-    
     @torch.no_grad()
     def eval_para(self, test_tf=False):
         
@@ -509,8 +361,9 @@ class CRunner(Runner):
 
 
             eval_values_steps[eval_step]=eval_values
-            eval_actions = np.array(eval_actions_collector).transpose(1,0,2)
+            # eval_actions = np.array(eval_actions_collector).transpose(1,0,2) if not self.all_args.central_controller else np.array(eval_actions_collector).transpose(1,2,0)
 
+            eval_actions = np.array(eval_actions_collector).reshape(n_eval_rollout_threads,self.all_args.num_involver,-1)
             # Obser reward and next obs
             eval_obs,eval_obs_critic, eval_rewards, eval_dones, eval_infos = envs.step(eval_actions)
 
@@ -531,7 +384,7 @@ class CRunner(Runner):
             for eval_index in range(n_eval_rollout_threads):
                 eval_info = eval_infos[eval_index]
 
-                for a in range(self.num_agents):
+                for a in range(self.num_involver):
                     transship_amount_all+=eval_info[a]['transship'] if eval_info[a]['transship']>0 else 0 
                     penalty_cost_all+=eval_info[a]['penalty_cost']
                     ordering_cost_all+=eval_info[a]['ordering_cost']
@@ -566,9 +419,9 @@ class CRunner(Runner):
                                                     tag_scalar_dict={'est_V': est_V,
                                                                     'real_V': eval_returns[step][agent_id],},
                                                                     global_step= step)
-        num_all= n_eval_rollout_threads*self.episode_length*self.num_agents
+        num_all= n_eval_rollout_threads*self.episode_length*self.num_involver
         all_demand_mean=self.demand_mean_test if test_tf else self.demand_mean_val
-        dict_cost={"transship_amount_all": transship_amount_all/num_all,"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/n_eval_rollout_threads/self.num_agents,'fill_rate':demand_fulfilled/num_all/all_demand_mean}
+        dict_cost={"transship_amount_all": transship_amount_all/num_all,"shipping_cost_all":shipping_cost_all/num_all,"shipping_cost_pure":shipping_cost_pure/num_all,"holding_cost":holding_cost_all/num_all,"ordering_cost":ordering_cost_all/num_all,"penalty_cost":penalty_cost_all/num_all,"ordering_times":ordering_times/n_eval_rollout_threads/self.num_involver,'fill_rate':demand_fulfilled/num_all/all_demand_mean}
         norm_reward_drift = self.all_args.reward_norm_multiplier*all_demand_mean if 'norm' in self.all_args.reward_type else 0 
         # print(time.time()-s_t)
         return np.mean(overall_reward)-norm_reward_drift, dict_cost
