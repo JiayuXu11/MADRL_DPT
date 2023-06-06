@@ -740,12 +740,9 @@ class Env(object):
                 step_arr = np.array([self.step_num])
             else:
                 step_arr = np.array([])
-            if (self.normalize):
-                arr = np.concatenate([base_arr*2/DEMAND_MAX-1., order_arr/DEMAND_MAX-1.,
-                                     transship_arr/DEMAND_MAX, step_arr*2/EPISODE_LEN-1])
-            else:
-                arr = np.concatenate(
-                    [base_arr, order_arr, transship_arr, step_arr])
+
+            arr = np.concatenate(
+                [base_arr, order_arr, transship_arr, step_arr])
             sub_agent_obs.append(arr)
 
         return sub_agent_obs
