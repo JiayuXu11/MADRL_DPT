@@ -78,15 +78,16 @@ if __name__ == "__main__":
     # all_args.generator_method='shanshu'
     # all_args.num_agents=5
     # all_args.homo_distance=True
-    all_args.algorithm_name = 'tsS_r'
-    # all_args.action_type='continue'
+    # all_args.algorithm_name = 'tsS_r'
     # all_args.norm_input =False
+    # all_args.action_type='continue'
+
     # all_args.actor_obs_step = False
 
     # all_args.compute_pure_returns=True
     # all_args.instant_info_sharing=True
 
-    # all_args.action_type='multi_discrete'
+    # all_args.action_type='discrete'
     # all_args.central_controller =True
 
     seeds = all_args.seed
