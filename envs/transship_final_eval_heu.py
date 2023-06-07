@@ -494,7 +494,7 @@ class Env(object):
                         transship_amounts[a2] -= self.transship_matrix[a2][a1]
 
         # 最后几天订的货，因为leadtime原因也到不了
-        if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
+        if self.step_num > EPISODE_LEN-self.lead_time-1:
             order_amounts = [0 for _ in range(self.agent_num)]
         transship_amounts = [sum(self.transship_matrix[i])
                              for i in range(self.agent_num)]

@@ -5,7 +5,6 @@ import numpy as np
 import math
 
 DEMAND_MAX = 20
-LEAD_TIME = 4
 
 # 只输出订货量
 
@@ -51,12 +50,15 @@ class Heuristic_Policy:
                                                  lr=self.critic_lr,
                                                  eps=self.opti_eps,
                                                  weight_decay=self.weight_decay)
+        
+        self.lead_time = args.lead_time
 
         self.k1 = -2.4
         self.k2 = -0.8
         self.pre_ema = [0]*30
         self.pre_ema_d_sqr = [0]*30
-        self.window = LEAD_TIME // 2
+        self.window = self.lead_time // 2
+        # self.window = 200
 
     def lr_decay(self, episode, episodes):
         pass
@@ -105,28 +107,31 @@ class Heuristic_Policy:
 
     def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False, safety_stock=1):
 
-        self.window = max(8, LEAD_TIME)
-        # self.window = LEAD_TIME
+        self.window = max(8, self.lead_time)
+        # self.window = self.lead_time
         actions = []
         # print(len(obs))
         for i in range(len(obs)):
             obs_curr = obs[i]
             inv = obs_curr[0]
             demand = obs_curr[1]
-            orders = obs_curr[2:2+LEAD_TIME]
+            orders = obs_curr[2:2+self.lead_time]
             total_inv = inv + sum(orders)
 
             window = self.window
             alpha = 2 / (window + 1)
-            t_plus_l = LEAD_TIME + 1
+            t_plus_l = self.lead_time + 1
 
             if len(self.hist_demand) == 0:
                 ema = demand
                 ema_d_sqr = 0
+            # if True:
+            #     ema = demand
+            #     ema_d_sqr = 0
             else:
                 ema = alpha * demand + (1 - alpha) * self.pre_ema[i]
                 ema_d_sqr = alpha * (demand - ema)**2 + \
-                    (1 - alpha) * (self.pre_ema_d_sqr[i])
+                (1 - alpha) * (self.pre_ema_d_sqr[i])
 
             mu_t_plus_l, d_sqr_t_plus_l = self.calculate_mu_and_d_sqr(
                 alpha, t_plus_l, ema, ema_d_sqr, self.pre_ema[i], self.pre_ema_d_sqr[i])
@@ -134,7 +139,7 @@ class Heuristic_Policy:
 
             s = mu_t_plus_l + self.k1 * sig_t_plus_l
             n = np.argmax(self.get_order_revenue_list(1., 0.2, 0.5, 5, demand))
-            n_t_plus_l = n + LEAD_TIME
+            n_t_plus_l = n + self.lead_time
 
             mu_n_t_plus_l, d_sqr_n_t_plus_l = self.calculate_mu_and_d_sqr(
                 alpha, n_t_plus_l, ema, ema_d_sqr, self.pre_ema[i], self.pre_ema_d_sqr[i])
