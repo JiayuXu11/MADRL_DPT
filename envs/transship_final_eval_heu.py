@@ -480,6 +480,7 @@ class Env(object):
 
                             transship_amounts[ind_i] -= int(var.x)
                             transship_amounts[ind_j] += int(var.x)
+            # transship_amounts = [0] * self.agent_num
             # 转换为transship_matrix格式
             for a1 in range(self.agent_num):
                 for a2 in range(self.agent_num):
@@ -497,7 +498,7 @@ class Env(object):
             order_amounts = [0 for _ in range(self.agent_num)]
         transship_amounts = [sum(self.transship_matrix[i])
                              for i in range(self.agent_num)]
-
+        # print(transship_amounts)
         mapped_actions = [k for k in zip(order_amounts, transship_amounts)]
 
         return mapped_actions

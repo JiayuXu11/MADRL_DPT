@@ -6,7 +6,7 @@ from gym import spaces
 # from envs.newsvendor_continue import Env
 # from envs.newsvendor import Env
 # from envs.transship_final_eval_heu import Env
-from envs.transship_final_eval import Env
+from envs.transship_final_eval_heu import Env
 # from envs.transship_new_all import Env
 # from envs.ms import Env
 # from envs.serial import Env

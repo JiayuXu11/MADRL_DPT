@@ -54,8 +54,8 @@ class Heuristic_Policy:
 
         self.k1 = -2.4
         self.k2 = -0.8
-        self.pre_ema = 0
-        self.pre_ema_d_sqr = 0
+        self.pre_ema = [0]*30
+        self.pre_ema_d_sqr = [0]*30
         self.window = LEAD_TIME // 2
 
     def lr_decay(self, episode, episodes):
@@ -124,12 +124,12 @@ class Heuristic_Policy:
                 ema = demand
                 ema_d_sqr = 0
             else:
-                ema = alpha * demand + (1 - alpha) * self.pre_ema
+                ema = alpha * demand + (1 - alpha) * self.pre_ema[i]
                 ema_d_sqr = alpha * (demand - ema)**2 + \
-                    (1 - alpha) * (self.pre_ema_d_sqr)
+                    (1 - alpha) * (self.pre_ema_d_sqr[i])
 
             mu_t_plus_l, d_sqr_t_plus_l = self.calculate_mu_and_d_sqr(
-                alpha, t_plus_l, ema, ema_d_sqr, self.pre_ema, self.pre_ema_d_sqr)
+                alpha, t_plus_l, ema, ema_d_sqr, self.pre_ema[i], self.pre_ema_d_sqr[i])
             sig_t_plus_l = math.sqrt(d_sqr_t_plus_l)
 
             s = mu_t_plus_l + self.k1 * sig_t_plus_l
@@ -137,12 +137,12 @@ class Heuristic_Policy:
             n_t_plus_l = n + LEAD_TIME
 
             mu_n_t_plus_l, d_sqr_n_t_plus_l = self.calculate_mu_and_d_sqr(
-                alpha, n_t_plus_l, ema, ema_d_sqr, self.pre_ema, self.pre_ema_d_sqr)
+                alpha, n_t_plus_l, ema, ema_d_sqr, self.pre_ema[i], self.pre_ema_d_sqr[i])
             sig_n_t_plus_l = math.sqrt(d_sqr_n_t_plus_l)
             S = mu_n_t_plus_l + self.k2 * sig_n_t_plus_l
 
-            self.pre_ema = ema
-            self.pre_ema_d_sqr = ema_d_sqr
+            self.pre_ema[i] = ema
+            self.pre_ema_d_sqr[i] = ema_d_sqr
 
             if total_inv < s:
                 order_heu = max(int(round(S - total_inv)), 0)

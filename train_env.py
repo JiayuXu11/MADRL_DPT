@@ -61,8 +61,8 @@ if __name__ == "__main__":
     all_args.num_env_steps = all_args.num_episodes * \
         all_args.episode_length * all_args.n_rollout_threads
 
-    # all_args.homo_distance = True
-    # all_args.mini_pooling["flag"] = True
+    all_args.homo_distance = False
+    all_args.mini_pooling["flag"] = False
     # all_args.reset_episode=1
     # all_args.n_no_improvement_thres = 100
     # all_args.banana=1
@@ -76,10 +76,10 @@ if __name__ == "__main__":
     # all_args.action_type = 'multi_discrete'
     # all_args.pay_first= False
     # all_args.generator_method='shanshu'
-    # all_args.num_agents=5
+    all_args.num_agents = 3
     # all_args.homo_distance=True
-    # all_args.algorithm_name = 'tsS_r'
-    # all_args.norm_input =False
+    all_args.algorithm_name = 'tsS_r'
+    all_args.norm_input = False
     # all_args.action_type='continue'
 
     # all_args.actor_obs_step = False

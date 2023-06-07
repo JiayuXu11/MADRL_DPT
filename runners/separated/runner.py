@@ -336,7 +336,8 @@ class CRunner(Runner):
         demand_fulfilled = 0
         transship_amount_all = 0
 
-        eval_obs, eval_obs_critic = envs.reset(normalize = self.all_args.norm_input)
+        eval_obs, eval_obs_critic = envs.reset(
+            normalize=self.all_args.norm_input)
 
         n_eval_rollout_threads = envs.get_eval_num()
 
@@ -381,8 +382,9 @@ class CRunner(Runner):
 
             eval_values_steps[eval_step] = eval_values
 
-            eval_actions = np.array(eval_actions_collector).transpose(1,0,2) if not self.all_args.central_controller else np.array(eval_actions_collector).transpose(1,2,0)
-            
+            eval_actions = np.array(eval_actions_collector).transpose(
+                1, 0, 2) if not self.all_args.central_controller else np.array(eval_actions_collector).transpose(1, 2, 0)
+
             # xx=np.array(eval_actions_collector).reshape(
             #     n_eval_rollout_threads, self.all_args.num_involver, -1)
 
