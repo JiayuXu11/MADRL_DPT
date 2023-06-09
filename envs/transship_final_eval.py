@@ -202,7 +202,7 @@ class Env(object):
         # demand_info_num = len(self.demand_info_for_critic)
         demand_info_num = (5 if 'quantile' in self.demand_info_for_critic else 0 )+(self.lead_time if 'LT_all' in self.demand_info_for_critic else 0 )+(1 if 'LT_mean' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
-        patial_info_sharing_dim = self.agent_num*2 if not info_sharing else 0
+        patial_info_sharing_dim = self.agent_num*2
         # critic的输入不包含当期需求
         obs_diff = self.agent_num if info_sharing else 1
         return self.get_obs_dim(info_sharing, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
@@ -662,7 +662,8 @@ class Env(object):
                     # demand_std_arr = np.array(demand_std_arr)
                     demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + (self.demand_LT_mean if 'LT_mean' in self.demand_info_for_critic else [])
                     demand_LT_arr = np.array(demand_LT_arr)
-                    other_actor_arr = np.array([])
+                    other_actor_arr = self.LT_inv_shortage
+                    other_actor_arr = np.array(other_actor_arr)
             else:
                 # demand_mean_arr = ([self.demand_mean[i]] if 'all_mean' in self.demand_info_for_critic else []) + ([self.demand_mean_dy[i]] if 'mean' in self.demand_info_for_critic else [])
                 # demand_mean_arr = np.array(demand_mean_arr)
