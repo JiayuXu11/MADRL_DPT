@@ -327,5 +327,9 @@ def get_config():
 
     parser.add_argument("--reset_episode", type=int,
                         default=99999, help="训练指定次数后，重置所有网络的weight")
+    
+    parser.add_argument("--ignore_after", type=t_or_f,
+                        default=False, help="T之外的收益用return均值表示")
+    
 
     return parser
