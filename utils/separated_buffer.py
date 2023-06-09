@@ -25,7 +25,7 @@ class SeparatedReplayBuffer(object):
         self.critic_learning_pure_returns = args.critic_learning_pure_returns
         self.train_episode_length = args.train_episode_length
         self.setting_time_end = args.setting_time_end
-        self.ignore_after = args.ignore_after
+
 
 
         obs_shape = get_shape_from_obs_space(obs_space)
@@ -130,7 +130,7 @@ class SeparatedReplayBuffer(object):
         """
         use proper time limits, the difference of use or not is whether use bad_mask
         """
-        if self.setting_time_end or self.ignore_after:
+        if self.setting_time_end:
             next_value = 0
         if self._use_proper_time_limits:
             if self._use_gae:
@@ -139,7 +139,7 @@ class SeparatedReplayBuffer(object):
                 for step in reversed(range(self.rewards.shape[0])):
                     if self._use_popart or self._use_valuenorm:
 
-                        preds_next = self.value_preds[step + 1] if (self.setting_time_end and (step==self.episode_length-1) ) else value_normalizer.denormalize(self.value_preds[step + 1])
+                        preds_next = self.value_preds[step + 1] if (self.setting_time_end and (step==self.episode_length-1)) else value_normalizer.denormalize(self.value_preds[step + 1])
                         delta = self.rewards[step] + self.gamma * preds_next * self.masks[step + 1] - value_normalizer.denormalize(self.value_preds[step])
                         gae = delta + self.gamma * self.gae_lambda * self.masks[step + 1] * gae
                         gae = gae * self.bad_masks[step + 1]
