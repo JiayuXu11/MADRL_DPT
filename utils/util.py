@@ -3,10 +3,12 @@ import math
 import torch
 import os
 
+
 def check(input):
     if type(input) == np.ndarray:
         return torch.from_numpy(input)
-        
+
+
 def get_gard_norm(it):
     sum_grad = 0
     for x in it:
@@ -15,19 +17,30 @@ def get_gard_norm(it):
         sum_grad += x.grad.norm() ** 2
     return math.sqrt(sum_grad)
 
+
 def update_linear_schedule(optimizer, epoch, total_num_epochs, initial_lr):
     """Decreases the learning rate linearly"""
     lr = initial_lr - (initial_lr * (epoch / float(total_num_epochs)))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
+
+def update_step_schedule(optimizer, step_size, gamma, epoch, total_num_epochs, initial_lr):
+    """Decrease the learning rate after a constant step_size"""
+    lr = initial_lr * (gamma ** (int(epoch/step_size)))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
 def huber_loss(e, d):
     a = (abs(e) <= d).float()
     b = (e > d).float()
     return a*e**2/2 + b*d*(abs(e)-d/2)
 
+
 def mse_loss(e):
     return e**2/2
+
 
 def get_shape_from_obs_space(obs_space):
     if obs_space.__class__.__name__ == 'Box':
@@ -37,6 +50,7 @@ def get_shape_from_obs_space(obs_space):
     else:
         raise NotImplementedError
     return obs_shape
+
 
 def get_shape_from_act_space(act_space):
     if act_space.__class__.__name__ == 'Discrete':
@@ -48,7 +62,7 @@ def get_shape_from_act_space(act_space):
     elif act_space.__class__.__name__ == "MultiBinary":
         act_shape = act_space.shape[0]
     else:  # agar
-        act_shape = act_space[0].shape[0] + 1  
+        act_shape = act_space[0].shape[0] + 1
     return act_shape
 
 
@@ -66,20 +80,23 @@ def tile_images(img_nhwc):
     N, h, w, c = img_nhwc.shape
     H = int(np.ceil(np.sqrt(N)))
     W = int(np.ceil(float(N)/H))
-    img_nhwc = np.array(list(img_nhwc) + [img_nhwc[0]*0 for _ in range(N, H*W)])
+    img_nhwc = np.array(
+        list(img_nhwc) + [img_nhwc[0]*0 for _ in range(N, H*W)])
     img_HWhwc = img_nhwc.reshape(H, W, h, w, c)
     img_HhWwc = img_HWhwc.transpose(0, 2, 1, 3, 4)
     img_Hh_Ww_c = img_HhWwc.reshape(H*h, W*w, c)
     return img_Hh_Ww_c
 
 # 删除文件夹
+
+
 def del_folder(path):
     if not os.path.exists(path):
         print('{} not exist, can not delete it'.format(path))
         return None
     ls = os.listdir(path)
     for i in ls:
-        c_path=os.path.join(path,i)
+        c_path = os.path.join(path, i)
         if os.path.isdir(c_path):
             del_folder(c_path)
         else:

@@ -168,6 +168,12 @@ def get_config():
     # run parameters
     parser.add_argument("--use_linear_lr_decay", type=t_or_f,
                         default=False, help='use a linear schedule on the learning rate')
+    parser.add_argument("--use_step_lr_decay", type=t_or_f, default=False,
+                        help='use a step decay schedule on the learning rate')
+    parser.add_argument("--lr_decay_stepsize", type=int, default=200,
+                        help='learning rate decays after constant stepsize (default: 200)')
+    parser.add_argument("--lr_decay_gamma", type=float, default=0.9,
+                        help='lr decay rate under step scheduler (default: 0.9)')
     parser.add_argument("--save_interval", type=int,
                         default=1, help="time duration between contiunous twice models saving.")
     parser.add_argument("--log_interval", type=int,
@@ -327,9 +333,8 @@ def get_config():
 
     parser.add_argument("--reset_episode", type=int,
                         default=99999, help="训练指定次数后，重置所有网络的weight")
-    
+
     parser.add_argument("--ignore_after", type=t_or_f,
                         default=False, help="T之外的收益用return均值表示")
-    
 
     return parser

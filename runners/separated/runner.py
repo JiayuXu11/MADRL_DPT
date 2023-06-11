@@ -39,7 +39,6 @@ class CRunner(Runner):
                       " Eval cost composition: ", dict_write)
                 print("Best Eval average cost(before): ", best_reward)
 
-
                 # re, dict_write = self.eval_para(test_tf=True)
                 # dict_write.update({'return': re})
                 # self.writter.add_scalars('cost_graph', dict_write, episode)
@@ -76,6 +75,9 @@ class CRunner(Runner):
             if self.use_linear_lr_decay:
                 for agent in range(self.all_args.num_agents):
                     self.trainer[agent].policy.lr_decay(episode, episodes)
+            if self.use_step_lr_decay:
+                for agent in range(self.all_args.num_agents):
+                    self.trainer[agent].policy.step_lr_decay(episode, episodes)
 
             # values, actions, action_log_probs, rnn_states, rnn_states_critic, actions_env = self.collect(0)
             for step in range(self.episode_length):

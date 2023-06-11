@@ -1,6 +1,7 @@
 import torch
 # from algorithms.actor_critic import Actor, Critic
 from utils.util import update_linear_schedule
+from utils.util import update_step_schedule
 
 
 class HAPPO_Policy:
@@ -15,10 +16,12 @@ class HAPPO_Policy:
     """
 
     def __init__(self, args, obs_space, cent_obs_space, act_space, device=torch.device("cpu")):
-        self.args=args
+        self.args = args
         self.device = device
         self.lr = args.lr
         self.critic_lr = args.critic_lr
+        self.lr_decay_stepsize = args.lr_decay_stepsize
+        self.lr_decay_gamma = args.lr_decay_gamma
         self.opti_eps = args.opti_eps
         self.weight_decay = args.weight_decay
 
@@ -32,7 +35,7 @@ class HAPPO_Policy:
             from algorithms.actor_critic import Actor, Critic
         self.actor = Actor(args, self.obs_space, self.act_space, self.device)
 
-        ######################################Please Note#########################################
+        ###################################### Please Note#########################################
         #####   We create one critic for each agent, but they are trained with same data     #####
         #####   and using same update setting. Therefore they have the same parameter,       #####
         #####   you can regard them as the same critic.                                      #####
@@ -53,8 +56,16 @@ class HAPPO_Policy:
         :param episode: (int) current training episode.
         :param episodes: (int) total number of training episodes.
         """
-        update_linear_schedule(self.actor_optimizer, episode, episodes, self.lr)
-        update_linear_schedule(self.critic_optimizer, episode, episodes, self.critic_lr)
+        update_linear_schedule(self.actor_optimizer,
+                               episode, episodes, self.lr)
+        update_linear_schedule(self.critic_optimizer,
+                               episode, episodes, self.critic_lr)
+
+    def step_lr_decay(self, episode, episodes):
+        update_step_schedule(self.actor_optimizer, self.lr_decay_stepsize,
+                             self.lr_decay_gamma, episode, episodes, self.lr)
+        update_step_schedule(self.critic_optimizer, self.lr_decay_stepsize,
+                             self.lr_decay_gamma, episode, episodes, self.critic_lr)
 
     def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, masks, available_actions=None,
                     deterministic=False):
@@ -81,7 +92,8 @@ class HAPPO_Policy:
                                                                  available_actions,
                                                                  deterministic)
 
-        values, rnn_states_critic = self.critic(cent_obs, rnn_states_critic, masks)
+        values, rnn_states_critic = self.critic(
+            cent_obs, rnn_states_critic, masks)
         return values, actions, action_log_probs, rnn_states_actor, rnn_states_critic
 
     def get_values(self, cent_obs, rnn_states_critic, masks):
@@ -116,15 +128,14 @@ class HAPPO_Policy:
         """
 
         action_log_probs, dist_entropy = self.actor.evaluate_actions(obs,
-                                                                rnn_states_actor,
-                                                                action,
-                                                                masks,
-                                                                available_actions,
-                                                                active_masks)
+                                                                     rnn_states_actor,
+                                                                     action,
+                                                                     masks,
+                                                                     available_actions,
+                                                                     active_masks)
 
         values, _ = self.critic(cent_obs, rnn_states_critic, masks)
         return values, action_log_probs, dist_entropy
-
 
     def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False):
         """
@@ -136,5 +147,6 @@ class HAPPO_Policy:
                                   (if None, all actions available)
         :param deterministic: (bool) whether the action should be mode of distribution or should be sampled.
         """
-        actions, _, rnn_states_actor = self.actor(obs, rnn_states_actor, masks, available_actions, deterministic)
+        actions, _, rnn_states_actor = self.actor(
+            obs, rnn_states_actor, masks, available_actions, deterministic)
         return actions, rnn_states_actor
