@@ -62,7 +62,8 @@ if __name__ == "__main__":
         all_args.episode_length * all_args.n_rollout_threads
 
     # all_args.homo_distance = True
-    all_args.use_step_lr_decay = True
+    # all_args.use_step_lr_decay = True
+    # all_args.if_transship = False
     # all_args.lead_time = 4
     # all_args.mini_pooling["flag"] = False
     # all_args.test_dir = './test_data/merton'
