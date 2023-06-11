@@ -37,7 +37,7 @@ def get_config():
     parser.add_argument("--experiment_name", type=str,
                         default="check", help="an identifier to distinguish different experiment.")
     parser.add_argument("--seed", type=int,
-                        default=[0, 1, 2], help="Random seed for numpy/torch")
+                        default=0, help="Random seed for numpy/torch")
     parser.add_argument("--seed_specify", action="store_true",
                         default=True, help="Random or specify seed for numpy/torch")
     parser.add_argument("--running_id", type=int,
