@@ -73,11 +73,18 @@ class CRunner(Runner):
             self.warmup(
                 train=True, normalize=self.all_args.norm_input, test_tf=False)
             if self.use_linear_lr_decay:
-                for agent in range(self.all_args.num_agents):
-                    self.trainer[agent].policy.lr_decay(episode, episodes)
+                if self.all_args.central_controller:
+                    self.trainer[0].policy.step_lr_decay(episode, episodes)
+                else:
+                    for agent in range(self.all_args.num_agents):
+                        self.trainer[agent].policy.lr_decay(episode, episodes)
             if self.use_step_lr_decay:
-                for agent in range(self.all_args.num_agents):
-                    self.trainer[agent].policy.step_lr_decay(episode, episodes)
+                if self.all_args.central_controller:
+                    self.trainer[0].policy.step_lr_decay(episode, episodes)
+                else:
+                    for agent in range(self.all_args.num_agents):
+                        self.trainer[agent].policy.step_lr_decay(
+                            episode, episodes)
 
             # values, actions, action_log_probs, rnn_states, rnn_states_critic, actions_env = self.collect(0)
             for step in range(self.episode_length):
