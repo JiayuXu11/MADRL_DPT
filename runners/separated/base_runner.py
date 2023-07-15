@@ -60,6 +60,8 @@ class Runner(object):
         # dir
         self.model_dir = self.all_args.model_dir
 
+        self.use_factor = self.all_args.use_factor
+
         # eval or test mean demand
         self.demand_mean_val = self.get_mean_demand(self.all_args.eval_dir)
         self.demand_mean_test = self.get_mean_demand(self.all_args.test_dir)
@@ -239,8 +241,8 @@ class Runner(object):
                                                                                                                       1].reshape(-1, *self.buffer[agent_id].masks.shape[2:]),
                                                                                           available_actions,
                                                                                           self.buffer[agent_id].active_masks[:-1].reshape(-1, *self.buffer[agent_id].active_masks.shape[2:]))
-
-            factor = factor*_t2n(torch.prod(torch.exp(new_actions_logprob-old_actions_logprob),
+            if self.use_factor:
+                factor = factor*_t2n(torch.prod(torch.exp(new_actions_logprob-old_actions_logprob),
                                  dim=-1).reshape(self.episode_length, self.n_rollout_threads, 1))
             train_infos.append(train_info)
             self.buffer[agent_id].after_update()

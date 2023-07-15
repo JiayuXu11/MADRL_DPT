@@ -1,7 +1,9 @@
 import numpy as np
 import random
+from random import randint
 import math
 import os
+import chardet
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
 """ new packages """
@@ -10,7 +12,6 @@ import statsmodels.api as sm
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.arima.model import ARIMAResults
 import pandas as pd
-
 
 class merton(object):
 
@@ -100,6 +101,57 @@ class shanshu(object):
         simulated_np = model_fit.simulate(length)
         simulated_np_clipped_and_squashed = np.clip(simulated_np, 0, simulated_np.max())*(max_demand/simulated_np.max())
         self.demand_list = np.round(simulated_np_clipped_and_squashed)
+
+    def __getitem__(self, key = 0):
+        return self.demand_list[key]
+    
+TRAIN_PTH = ["./train_data/shanshu_sampling/0/", "./train_data/shanshu_sampling/1/", "./train_data/shanshu_sampling/2/"]
+
+class shanshu_sampling(object):
+    def __init__(self, agent, length, max_demand = 20):
+        files_0 = os.listdir(TRAIN_PTH[0])
+        n_eval = len(files_0)
+        i=randint(0,n_eval-1)
+        self.demand_list = []
+        files=os.listdir(TRAIN_PTH[agent])
+        with open(TRAIN_PTH[agent] + files[i],'rb') as f:
+                d=f.read()
+                encoding = chardet.detect(d)['encoding']
+        with open(TRAIN_PTH[agent] + files[i],  encoding=encoding) as f:
+            lines = f.readlines()
+            for line in lines:
+                self.demand_list.append(int(line))
+            
+
+        for i in range(len(self.demand_list)):
+            self.demand_list[i] = min(max_demand, self.demand_list[i])  
+
+    def __getitem__(self, key = 0):
+        return self.demand_list[key]
+    
+class random_fragment(object):
+    def __init__(self, agent, length, train_path,max_demand):
+        cur_data = train_path+'/'+str(agent)+'.csv'
+        cur_df = pd.read_csv(cur_data)
+        start = randint(0,535)
+        cur_df_eval = cur_df.iloc[start:start+length].copy()
+        self.demand_list = cur_df_eval['sale'].tolist()
+
+        for i in range(len(self.demand_list)):
+            self.demand_list[i] = min(max_demand, self.demand_list[i])  
+
+    def __getitem__(self, key = 0):
+        return self.demand_list[key]
+    
+class random_resample(object):
+    def __init__(self, agent, length, train_path,max_demand):
+        cur_data = train_path+'/'+str(agent)+'.csv'
+        cur_df = pd.read_csv(cur_data)
+        random_elements = np.random.choice(cur_df['sale'], size=length, replace=False)
+        self.demand_list = random_elements.tolist()
+
+        for i in range(len(self.demand_list)):
+            self.demand_list[i] = min(max_demand, self.demand_list[i])  
 
     def __getitem__(self, key = 0):
         return self.demand_list[key]

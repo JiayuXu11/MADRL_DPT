@@ -291,12 +291,20 @@ def get_config():
    #  parser.add_argument("--demand_mean_val", type=float,
    #                      default=9.478111111111112, help="验证集需求的平均数")
 
-    parser.add_argument("--generator_method", type=str,
-                        default="merton", choices=['merton', 'uniform', 'poisson', 'normal', 'shanshu'], help="数据生成的方法")
+    # parser.add_argument("--generator_method", type=str,
+    #                     default="merton", choices=['merton', 'uniform', 'poisson', 'normal', 'shanshu'], help="数据生成的方法")
     parser.add_argument("--eval_dir", type=str,
                         default="./eval_data/merton", help="验证集目录(./xx/xx的格式)")
     parser.add_argument("--test_dir", type=str,
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
+    parser.add_argument("--generator_method", type=str, 
+                        default="merton",choices=['merton','uniform','poisson','normal','shanshu','shanshu_sampling','random_fragment','random_resample'], help="数据生成的方法")
+    # parser.add_argument("--eval_dir", type=str, 
+    #                     default="./eval_data/SKU029", help="验证集目录(./xx/xx的格式)")
+    # parser.add_argument("--test_dir", type=str, 
+    #                     default="./test_data/SKU029", help="测试集目录(./xx/xx的格式)")
+    parser.add_argument("--train_dir", type=str, 
+                        default="./train_data/SKU029", help="训练集目录(./xx/xx的格式)")
 
     parser.add_argument("--demand_info_for_critic", type=str,
                         default=['quantile', 'LT_all'], choices=['quantile', 'LT_all'], help="给critic network披露的未来需求信息")
@@ -338,5 +346,11 @@ def get_config():
 
     parser.add_argument("--ignore_after", type=t_or_f,
                         default=False, help="T之外的收益用return均值表示")
+
+    parser.add_argument("--demand_for_action_dim", type=int, 
+                    default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
+    
+    parser.add_argument("--use_factor", type=t_or_f, 
+                        default=True,help="用不用sequential factor")
 
     return parser

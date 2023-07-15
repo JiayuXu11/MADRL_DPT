@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 import torch
 from config import get_config
-from envs.env_wrappers_continue import SubprocVecEnv, DummyVecEnv, EvalVecEnv
+from envs.env_wrappers_action_dim_selected import SubprocVecEnv, DummyVecEnv, EvalVecEnv
 from runners.separated.runner import CRunner as Runner
 import yaml
 import random
@@ -56,7 +56,8 @@ if __name__ == "__main__":
     print(all_args.seed)
 
     # 最后leadtime天的行动不参与训练
-    all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
+    # all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
+    all_args.train_episode_length = all_args.episode_length
     # 自动调num_steps
     all_args.num_env_steps = all_args.num_episodes * \
         all_args.episode_length * all_args.n_rollout_threads
