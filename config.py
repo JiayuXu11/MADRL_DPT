@@ -352,5 +352,8 @@ def get_config():
     
     parser.add_argument("--use_factor", type=t_or_f, 
                         default=True,help="用不用sequential factor")
+    
+    parser.add_argument("--critic_obs_step", type=t_or_f,
+                        default=False, help="step信息是否作为critic网络的输入")
 
     return parser

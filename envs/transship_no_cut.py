@@ -101,10 +101,11 @@ class Env(object):
         self.instant_info_sharing=args.instant_info_sharing
         self.obs_transship=args.obs_transship
         self.actor_obs_step =args.actor_obs_step
+        self.critic_obs_step = args.critic_obs_step
         self.obs_dim = self.get_obs_dim(self.instant_info_sharing, self.actor_obs_step)
         # critic_obs
         self.use_centralized_V = args.use_centralized_V
-        self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, True)
+        self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, self.critic_obs_step)
 
         # 根据这个来调action_dim,如果为空，就还是原来的ACTION_DIM_DICT那种
         self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*3
@@ -268,7 +269,7 @@ class Env(object):
             self.demand_list = demand_list_set
 
         sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) 
-        critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
+        critic_obs = self.get_step_obs_critic(self.use_centralized_V, self.critic_obs_step)
         
         return sub_agent_obs, critic_obs
     
@@ -319,7 +320,7 @@ class Env(object):
         sub_agent_info = self.get_info()
 
 
-        critic_obs = self.get_step_obs_critic(self.use_centralized_V, True)
+        critic_obs = self.get_step_obs_critic(self.use_centralized_V, self.critic_obs_step)
 
 
         self.transship_matrix = np.zeros((self.agent_num, self.agent_num))
@@ -406,9 +407,9 @@ class Env(object):
                         transship_amounts[a1]-=self.transship_matrix[a1][a2]
                         transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
-        # 最后几天订的货，因为leadtime原因也到不了
-        if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
-            order_amounts = [0 for _ in range(self.agent_num)]
+        # # 最后几天订的货，因为leadtime原因也到不了
+        # if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
+        #     order_amounts = [0 for _ in range(self.agent_num)]
         transship_amounts= [sum(self.transship_matrix[i]) for i in range(self.agent_num)]
         mapped_actions=[k for k in zip(order_amounts,transship_amounts)]
 
