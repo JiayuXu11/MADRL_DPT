@@ -130,10 +130,9 @@ class shanshu_sampling(object):
         return self.demand_list[key]
     
 class random_fragment(object):
-    def __init__(self, agent, length, train_path,max_demand):
+    def __init__(self, agent, length, train_path,max_demand,start):
         cur_data = train_path+'/'+str(agent)+'.csv'
         cur_df = pd.read_csv(cur_data)
-        start = randint(0,535)
         cur_df_eval = cur_df.iloc[start:start+length].copy()
         self.demand_list = cur_df_eval['sale'].tolist()
 

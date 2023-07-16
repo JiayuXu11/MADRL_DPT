@@ -199,7 +199,8 @@ class Env(object):
         elif(self.generator_method=='shanshu_sampling'):
             demand_list = [generator.shanshu_sampling(i,2*EPISODE_LEN, DEMAND_MAX).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_fragment'):
-            demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,DEMAND_MAX).demand_list for i in range(self.agent_num)]
+            start = random.randint(0,500)
+            demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,DEMAND_MAX,start).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_resample'):
             demand_list = [generator.random_resample(i,2*EPISODE_LEN,self.train_path,DEMAND_MAX).demand_list for i in range(self.agent_num)]
 

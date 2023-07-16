@@ -56,7 +56,7 @@ DISTANCE = [
 S_I = 10
 S_O = 10
 
-DEMAND_MAX = 20
+DEMAND_MAX = 200
 
 EPISODE_LEN = 200
 
@@ -191,6 +191,13 @@ class Env(object):
             demand_list = [generator.shanshu(
                 EPISODE_LEN, DEMAND_MAX, i).demand_list for i in range(self.agent_num)]
             #  demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
+        elif(self.generator_method=='random_fragment'):
+            start = random.randint(0,535)
+            demand_list = [generator.random_fragment(i,EPISODE_LEN,self.train_path,DEMAND_MAX,start).demand_list for i in range(self.agent_num)]
+        elif(self.generator_method=='random_resample'):
+            demand_list = [generator.random_resample(i,EPISODE_LEN,self.train_path,DEMAND_MAX).demand_list for i in range(self.agent_num)]
+
+
         return demand_list
 
     def get_obs_dim(self, info_sharing, obs_step):
