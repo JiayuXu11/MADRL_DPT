@@ -60,7 +60,6 @@ DEMAND_MAX = 20
 
 EPISODE_LEN = 200
 
-FIXED_COST = 5
 
 
 #====================================================================================
@@ -83,6 +82,7 @@ class Env(object):
         self.R = args.R  # selling price per unit (only used for reward)
         self.P = args.P  # penalty cost
         self.C = args.C  # ordering cost
+        self.FIXED_COST = args.FIXED_COST 
         self.shipping_cost_per_distance = args.shipping_cost_per_distance
 
         self.generator_method = args.generator_method
@@ -778,7 +778,7 @@ class Env(object):
             # 运费+买卖货的费用
             self.shipping_cost_all[i] = self.shipping_cost_pure[i] + self.C*(action[i][1])
 
-            self.ordering_cost[i] = (self.C*(action[i][0])+FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (self.C*(self.order[i][0])+FIXED_COST*(1 if self.order[i][0]>0 else 0))
+            self.ordering_cost[i] = (self.C*(action[i][0])+self.FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (self.C*(self.order[i][0])+self.FIXED_COST*(1 if self.order[i][0]>0 else 0))
             self.ordering_times[i]+=(1 if action[i][0]>0 else 0) if self.pay_first else (1 if self.order[i][0]>0 else 0)
             self.penalty_cost[i] = -self.P*min(inv_start-cur_demand[i],0)
             self.holding_cost[i] = self.H*max(inv_start-cur_demand[i],0)

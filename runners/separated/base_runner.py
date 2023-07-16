@@ -312,5 +312,5 @@ class Runner(object):
         for i in range(self.num_agents):
             log_dir = self.log_dir
             dir = os.path.join(log_dir, dir_name.format(str(i)))
-            #del_folder(dir)
+            del_folder(dir)
         self.writter = SummaryWriter(log_dir)

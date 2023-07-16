@@ -334,6 +334,8 @@ def get_config():
                         default=3.5, help="penalty cost per unit")
     parser.add_argument("--C", type=float,
                         default=2, help="ordering cost per unit")
+    parser.add_argument("--FIXED_COST", type=float,
+                        default=5, help="fixed cost for each order")
 
     parser.add_argument("--shipping_cost_per_distance", type=float,
                         default=0.0005, help="shipping_cost_per_distance")
