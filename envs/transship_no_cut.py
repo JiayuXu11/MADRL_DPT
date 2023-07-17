@@ -108,7 +108,7 @@ class Env(object):
         self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, self.critic_obs_step)
 
         # 根据这个来调action_dim,如果为空，就还是原来的ACTION_DIM_DICT那种
-        self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*3
+        self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
 
         # ACTION_DIM_DICT = {'discrete':(DEMAND_MAX*2+1)*(DEMAND_MAX+1),'multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1],'continue':2, 'central_multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1]*self.agent_num, 'central_discrete':[(DEMAND_MAX*2+1)*(DEMAND_MAX+1)]*self.agent_num}
         self.action_type = args.action_type
