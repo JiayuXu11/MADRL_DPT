@@ -298,7 +298,7 @@ def get_config():
     parser.add_argument("--test_dir", type=str,
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
     parser.add_argument("--generator_method", type=str, 
-                        default="merton",choices=['merton','uniform','poisson','normal','shanshu','shanshu_sampling','random_fragment','random_resample'], help="数据生成的方法")
+                        default="merton",choices=['merton','uniform','poisson','normal','shanshu','shanshu_sampling','random_fragment','align_random_fragment','random_resample'], help="数据生成的方法")
     # parser.add_argument("--eval_dir", type=str, 
     #                     default="./eval_data/SKU029", help="验证集目录(./xx/xx的格式)")
     # parser.add_argument("--test_dir", type=str, 
