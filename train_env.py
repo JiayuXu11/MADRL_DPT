@@ -55,6 +55,8 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+
+    # all_args.demand_for_action_dim = [50,20,30]
     # 最后leadtime天的行动不参与训练
     # all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
     all_args.train_episode_length = all_args.episode_length
