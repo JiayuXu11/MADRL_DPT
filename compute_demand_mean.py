@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.pyplot import plot
 import chardet
 #EVAL_PTH = ["./eval_data/SKU029/0/", "./eval_data/SKU029/1/", "./eval_data/SKU029/2/"]
-EVAL_PTH = ["./test_data/SKU029_tot/{}/".format(i) for i in range(18)]
+EVAL_PTH = ["transship/eval_data/SKU029_tot/{}/".format(i) for i in range(3)]
 
 # EVAL_PTH = ["./shanshu_sampling_test/0/", "./shanshu_sampling_test/1/", "./shanshu_sampling_test/2/"]
 
