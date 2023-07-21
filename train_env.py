@@ -48,6 +48,8 @@ def parse_args(args, parser):
 if __name__ == "__main__":
     parser = get_config()
     all_args = parse_args(sys.argv[1:], parser)
+
+    all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
     if all_args.yaml_path:
         with open(all_args.yaml_path, 'r') as f:
             yml = yaml.load(f, Loader=yaml.FullLoader)
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
-
+    all_args.num_agents =3
     # all_args.demand_for_action_dim = [50,20,30]
     # 最后leadtime天的行动不参与训练
     # all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1

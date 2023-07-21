@@ -1,0 +1,95 @@
+algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
+experiment_name: 'SKU029'
+
+# basic setting
+model_dir:  #"C:/Users/Jerry/Desktop/thesis/code/MADRL/MADRL_main/results/TransshipNewEnv/InventoryManagement/happo/continue_cent_controller1/run_seed_1/models"
+n_rollout_threads: 300
+num_env_steps: 300000000
+num_agents: 18
+num_episodes: 10000
+eval_interval: 10
+n_no_improvement_thres: 60
+gamma: 0.98
+
+# continue or discrete
+action_type: 'multi_discrete'  # ['discrete', 'multi_discrete', 'continue']
+
+# env
+alpha: 1
+ratio_transship: False
+transship_revenue_method: 'constant'
+constant_transship_revenue: 0.5
+ratio_transship_revenue: 0.6
+
+central_controller: False
+obs_transship: 'no_transship'
+actor_obs_step: False
+# train_episode_length: 195
+
+# fluctuation control
+entropy_decrease: False
+entropy_decrease_list: [0.1,0.01,0.005]
+entropy_coef: 0.01
+std_y_coef: [10.0,10.0]  # only for continue
+std_x_coef: 1.0
+
+# lr
+use_linear_lr_decay: False
+lr: 5e-4
+critic_lr: 1e-3
+
+# model setting
+recurrent_N: 2
+layer_N: 2 #
+hidden_size: 256
+hidden_size_critic: 64 # critic
+use_ReLU: False
+weight_decay: 0
+
+# ppo
+ppo_epoch: 10 #
+use_proper_time_limits: False
+use_gae: True
+gae_lambda: 0.95
+use_clipped_value_loss: True
+clip_param: 0.2
+critic_learning_pure_returns: False
+advantage_pure_returns: False
+
+# normalization
+sample_mean_advantage: True
+use_valuenorm: True
+use_popart: False
+use_feature_normalization: False
+use_max_grad_norm: True
+max_grad_norm: 0.5
+
+instant_info_sharing: False
+lead_time: 4
+reward_norm_multiplier: 2.4 #
+reward_type: norm_cost
+
+setting_time_end: True
+ignore_after: True
+demand_info_for_critic: ['quantile','LT_all']
+
+pay_first: False
+
+generator_method: 'random_resample'
+eval_dir: "./eval_data/SKU029_tot"
+test_dir: "./test_data/SKU029_tot"
+train_dir: "./train_data/SKU029_tot"
+
+cat_self: False
+cat_self_critic: False
+use_centralized_V: False #
+
+homo_distance: False
+mini_pooling["flag"]: True
+mini_pooling["how"]: 'ratio'
+distance_index: 1
+
+demand_for_action_dim: [47, 74, 44, 28, 60, 53, 16, 8, 2, 44, 10, 14, 8, 12, 24, 16, 15, 7]
+use_factor: True
+critic_obs_step: False
+FIXED_COST: 5
