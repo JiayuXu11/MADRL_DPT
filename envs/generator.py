@@ -104,7 +104,22 @@ class shanshu(object):
 
     def __getitem__(self, key = 0):
         return self.demand_list[key]
-    
+
+class shanshu_arima(object):
+
+    def __init__(self, SKU_id, agent, length, demand_max_for_clip):
+
+        """ need to be specified in this self that which warehous_sku does this agent belongs to """
+        ARIMA_path = os.path.join("envs", "ARIMA_results_" + SKU_id, "ARIMA-" + str(agent) + ".txt")
+        #print(ARIMA_path)
+        model_fit = ARIMAResults.load(ARIMA_path)
+        simulated_np = model_fit.simulate(length)
+        simulated_np_clipped_and_squashed = np.clip(simulated_np, 0, demand_max_for_clip[agent])
+        self.demand_list = np.round(simulated_np_clipped_and_squashed)
+
+    def __getitem__(self, key = 0):
+        return self.demand_list[key]
+      
 TRAIN_PTH = ["./train_data/shanshu_sampling/0/", "./train_data/shanshu_sampling/1/", "./train_data/shanshu_sampling/2/"]
 
 class shanshu_sampling(object):

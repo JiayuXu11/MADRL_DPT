@@ -76,6 +76,8 @@ class Env(object):
         self.lead_time = args.lead_time
         self.demand_info_for_critic=args.demand_info_for_critic
         self.train_path = args.train_dir
+        self.SKU_id = args.SKU_id
+        self.demand_max_for_clip = args.demand_max_for_clip
         
         # cost parameter
         self.H = args.H  # holding cost
@@ -196,6 +198,8 @@ class Env(object):
         elif(self.generator_method=='shanshu'):
              demand_list = [generator.shanshu(2*EPISODE_LEN,DEMAND_MAX,i).demand_list for i in range(self.agent_num)]
             #  demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
+        elif(self.generator_method=='shanshu_arima'):
+             demand_list = [generator.shanshu_arima(self.SKU_id,i,2*EPISODE_LEN,self.demand_max_for_clip).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='shanshu_sampling'):
             demand_list = [generator.shanshu_sampling(i,2*EPISODE_LEN, 1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='align_random_fragment'):

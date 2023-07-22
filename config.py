@@ -298,13 +298,15 @@ def get_config():
     parser.add_argument("--test_dir", type=str,
                         default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
     parser.add_argument("--generator_method", type=str, 
-                        default="merton",choices=['merton','uniform','poisson','normal','shanshu','shanshu_sampling','random_fragment','align_random_fragment','random_resample'], help="数据生成的方法")
+                        default="merton",choices=['merton','uniform','poisson','normal','shanshu','shanshu_arima','shanshu_sampling','random_fragment','align_random_fragment','random_resample'], help="数据生成的方法")
     # parser.add_argument("--eval_dir", type=str, 
     #                     default="./eval_data/SKU029", help="验证集目录(./xx/xx的格式)")
     # parser.add_argument("--test_dir", type=str, 
     #                     default="./test_data/SKU029", help="测试集目录(./xx/xx的格式)")
     parser.add_argument("--train_dir", type=str, 
                         default="./train_data/SKU029", help="训练集目录(./xx/xx的格式)")
+    parser.add_argument("--SKU_id", type=str, 
+                        default="SKU029", help="index of tested SKU")
 
     parser.add_argument("--demand_info_for_critic", type=str,
                         default=['quantile', 'LT_all'], choices=['quantile', 'LT_all'], help="给critic network披露的未来需求信息")
@@ -317,7 +319,7 @@ def get_config():
 
     parser.add_argument("--mini_pooling", type=t_or_f,
                         default={"flag": False, "threshold": 200, "how": "even"}, help="设置mini_pooling机制, how: even or ratio")
-
+ 
     parser.add_argument("--pay_first", type=t_or_f,
                         default=False, help="若为True, 则订货时付钱, False则到货到了再付钱")
 
@@ -349,8 +351,11 @@ def get_config():
     parser.add_argument("--ignore_after", type=t_or_f,
                         default=False, help="T之外的收益用return均值表示")
 
-    parser.add_argument("--demand_for_action_dim", type=int, 
+    parser.add_argument("--demand_for_action_dim", type=list, 
                     default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
+    # 只在shanshu_arima里用
+    parser.add_argument("--demand_max_for_clip", type=list, 
+                    default=[129, 200, 104, 82, 154, 141, 61, 32, 7, 174, 40, 57, 31, 47, 92, 61, 51, 28],help="跟据该list设定action dim。eg. [10,15,20] ")
     
     parser.add_argument("--use_factor", type=t_or_f, 
                         default=True,help="用不用sequential factor")
