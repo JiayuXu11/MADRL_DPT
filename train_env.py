@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
         curr_run = 'run_seed_%i' % (seed + 1)
 
-        seed_res_record_file = run_dir / "seed_results.txt"
+        seed_res_record_file = run_dir / "{}.txt".format(all_args.experiment_name)
 
         run_dir = run_dir / curr_run
         if not run_dir.exists():
@@ -192,6 +192,9 @@ if __name__ == "__main__":
                 f.write('eval_cost_composition' + str(eval_dict))
                 f.write('\n')
                 f.write('test_cost_composition' + str(test_dict))
+                f.write('\n')
+                f.write('\n')
+                f.write('all_args'+str(all_args))
                 f.write('\n')
 
             if not all_args.entropy_decrease:
