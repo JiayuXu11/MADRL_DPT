@@ -33,13 +33,13 @@ class Actor(nn.Module):
         self.base = base(args, obs_shape,hidden_size=self.hidden_size[:args.layer_N+1],cat_self=args.cat_self)
 
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            self.rnn = RNNLayer(self.hidden_size[args.layer_N], self.hidden_size[args.layer_N+1], self._recurrent_N, self._use_orthogonal)
+            self.rnn = RNNLayer(self.hidden_size[args.layer_N], self.hidden_size[args.layer_N+1], self._recurrent_N, self._use_orthogonal,args.rnn_name)
 
         self.act = ACTLayer(action_space, self.hidden_size[args.layer_N+1], self._use_orthogonal, self._gain, args)
 
         self.to(device)
 
-    def forward(self, obs, rnn_states, masks, available_actions=None, deterministic=False):
+    def forward(self, obs, rnn_states, cell_states, masks, available_actions=None, deterministic=False, ):
         """
         Compute actions from the given inputs.
         :param obs: (np.ndarray / torch.Tensor) observation inputs into network.
@@ -55,6 +55,8 @@ class Actor(nn.Module):
         """
         obs = check(obs).to(**self.tpdv)
         rnn_states = check(rnn_states).to(**self.tpdv)
+        if cell_states is not None:
+            cell_states = check(cell_states).to(**self.tpdv)
         masks = check(masks).to(**self.tpdv)
         if available_actions is not None:
             available_actions = check(available_actions).to(**self.tpdv)
@@ -62,13 +64,13 @@ class Actor(nn.Module):
         actor_features = self.base(obs)
 
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            actor_features, rnn_states = self.rnn(actor_features, rnn_states, masks)
+            actor_features, rnn_states, cell_states = self.rnn(actor_features, rnn_states, cell_states, masks)
 
         actions, action_log_probs = self.act(actor_features, available_actions, deterministic)
 
-        return actions, action_log_probs, rnn_states
+        return actions, action_log_probs, rnn_states, cell_states
 
-    def evaluate_actions(self, obs, rnn_states, action, masks, available_actions=None, active_masks=None):
+    def evaluate_actions(self, obs, rnn_states, cell_states, action, masks, available_actions=None, active_masks=None):
         """
         Compute log probability and entropy of given actions.
         :param obs: (torch.Tensor) observation inputs into network.
@@ -84,6 +86,7 @@ class Actor(nn.Module):
         """
         obs = check(obs).to(**self.tpdv)
         rnn_states = check(rnn_states).to(**self.tpdv)
+        cell_states = check(cell_states).to(**self.tpdv)
         action = check(action).to(**self.tpdv)
         masks = check(masks).to(**self.tpdv)
         if available_actions is not None:
@@ -95,7 +98,7 @@ class Actor(nn.Module):
         actor_features = self.base(obs)
 
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            actor_features, rnn_states = self.rnn(actor_features, rnn_states, masks)
+            actor_features, rnn_states,cell_states = self.rnn(actor_features, rnn_states, cell_states, masks)
 
         if self.args.algorithm_name=="hatrpo":
             action_log_probs, dist_entropy ,action_mu, action_std, all_probs= self.act.evaluate_actions_trpo(actor_features,
@@ -138,8 +141,8 @@ class Critic(nn.Module):
         self.base = base(args, cent_obs_shape, self.hidden_size[:args.layer_N+1],cat_self=args.cat_self)
 
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            # self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal)
-            self.rnn = RNNLayer(self.hidden_size[args.layer_N], self.hidden_size[args.layer_N+1], self._recurrent_N, self._use_orthogonal)
+            # self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal,args.rnn_name)
+            self.rnn = RNNLayer(self.hidden_size[args.layer_N], self.hidden_size[args.layer_N+1], self._recurrent_N, self._use_orthogonal,args.rnn_name)
 
         def init_(m):
             return init(m, init_method, lambda x: nn.init.constant_(x, 0))
@@ -149,7 +152,7 @@ class Critic(nn.Module):
 
         self.to(device)
 
-    def forward(self, cent_obs, rnn_states, masks):
+    def forward(self, cent_obs, rnn_states, cell_states, masks):
         """
         Compute actions from the given inputs.
         :param cent_obs: (np.ndarray / torch.Tensor) observation inputs into network.
@@ -161,11 +164,12 @@ class Critic(nn.Module):
         """
         cent_obs = check(cent_obs).to(**self.tpdv)
         rnn_states = check(rnn_states).to(**self.tpdv)
+        cell_states = check(cell_states).to(**self.tpdv)
         masks = check(masks).to(**self.tpdv)
 
         critic_features = self.base(cent_obs)
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            critic_features, rnn_states = self.rnn(critic_features, rnn_states, masks)
+            critic_features, rnn_states, cell_states = self.rnn(critic_features, rnn_states,cell_states, masks)
         values = self.v_out(critic_features)
 
-        return values, rnn_states
+        return values, rnn_states, cell_states

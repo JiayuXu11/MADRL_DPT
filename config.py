@@ -362,5 +362,8 @@ def get_config():
     
     parser.add_argument("--critic_obs_step", type=t_or_f,
                         default=False, help="step信息是否作为critic网络的输入")
+    
+    parser.add_argument("--rnn_name", type=str,
+                        default="GRU", choices=["GRU","LSTM","RNN"], help="rnn用的哪个layer")
 
     return parser

@@ -63,15 +63,15 @@ class Heuristic_Policy:
     def lr_decay(self, episode, episodes):
         pass
 
-    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, masks, available_actions=None,
+    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic,cell_states_actor, cell_states_critic, masks, available_actions=None,
                     deterministic=False):
-        actions, temp_rnn_state = self.act(obs, rnn_states_actor, None)
-        return torch.tensor([[0.]*30]).T, actions, None, temp_rnn_state, torch.tensor(rnn_states_critic)
+        actions, temp_rnn_state,temp_cell_state = self.act(obs, rnn_states_actor,cell_states_actor, None)
+        return torch.tensor([[0.]*30]).T, actions, None, temp_rnn_state, torch.tensor(rnn_states_critic), temp_cell_state, torch.tensor(cell_states_critic)
 
-    def get_values(self, cent_obs, rnn_states_critic, masks):
+    def get_values(self, cent_obs, rnn_states_critic,cell_states_critic, masks):
         pass
 
-    def evaluate_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, action, masks,
+    def evaluate_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic,cell_states_actor, cell_states_critic, action, masks,
                          available_actions=None, active_masks=None):
         pass
 
@@ -105,7 +105,7 @@ class Heuristic_Policy:
             d_sqr += tmp_ema_d_sqr
         return mu, d_sqr
 
-    def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False, safety_stock=1):
+    def act(self, obs, rnn_states_actor,cell_states_actor, masks, available_actions=None, deterministic=False, safety_stock=1):
 
         self.window = max(8, self.lead_time)
         # self.window = self.lead_time
@@ -156,4 +156,4 @@ class Heuristic_Policy:
             actions.append([order_heu, 0.])
             # print(actions)
         # print(order_heu, order_heu1, order_heu-order_heu1)
-        return torch.tensor(actions), torch.tensor(rnn_states_actor)
+        return torch.tensor(actions), torch.tensor(rnn_states_actor), torch.tensor(cell_states_actor)

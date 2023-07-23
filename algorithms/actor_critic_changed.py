@@ -39,7 +39,7 @@ class Actor(nn.Module):
         self.base4 = base(args, 26, self.hidden_size,1, cat_self=False)
         
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal)
+            self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal,args.rnn_name)
 
         self.act = ACTLayer(action_space, self.hidden_size, self._use_orthogonal, self._gain, args)
 
@@ -154,7 +154,7 @@ class Critic(nn.Module):
         self.base = base(args, cent_obs_shape, self.hidden_size)
 
         if self._use_naive_recurrent_policy or self._use_recurrent_policy:
-            self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal)
+            self.rnn = RNNLayer(self.hidden_size, self.hidden_size, self._recurrent_N, self._use_orthogonal,args.rnn_name)
 
         def init_(m):
             return init(m, init_method, lambda x: nn.init.constant_(x, 0))
