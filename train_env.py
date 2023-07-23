@@ -57,8 +57,10 @@ if __name__ == "__main__":
     print(all_args.seed)
 
     # all_args.demand_for_action_dim = [50,20,30]
+
     # 最后leadtime天的行动不参与训练
-    # all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
+    all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
+    # 无限天就每天都参与训练
     if (not all_args.setting_time_end) and (not all_args.ignore_after):
         all_args.train_episode_length = all_args.episode_length
     # 自动调num_steps

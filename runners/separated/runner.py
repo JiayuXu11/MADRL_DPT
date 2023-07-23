@@ -92,7 +92,7 @@ class CRunner(Runner):
                 if self.all_args.algorithm_name == 'happo':
                     # Sample actions
 
-                    values, actions, action_log_probs, rnn_states, rnn_states_critic = self.collect(
+                    values, actions, action_log_probs, rnn_states, rnn_states_critic, cell_states, cell_states_critic = self.collect(
                         step)
 
                     # Obser reward and next obs
@@ -121,7 +121,7 @@ class CRunner(Runner):
 
                 data = obs, obs_critic, rewards, dones, infos, available_actions, \
                     values, actions, action_log_probs, \
-                    rnn_states, rnn_states_critic
+                    rnn_states, rnn_states_critic,cell_states, cell_states_critic
 
                 # insert data into buffer
                 self.insert(data)
@@ -229,15 +229,19 @@ class CRunner(Runner):
         action_log_prob_collector = []
         rnn_state_collector = []
         rnn_state_critic_collector = []
+        cell_state_collector = []
+        cell_state_critic_collector = []
 
         for agent_id in range(self.num_agents):
             self.trainer[agent_id].prep_rollout()
 
-            value, action, action_log_prob, rnn_state, rnn_state_critic \
+            value, action, action_log_prob, rnn_state, rnn_state_critic,cell_state, cell_state_critic \
                 = self.trainer[agent_id].policy.get_actions(self.buffer[agent_id].share_obs[step],
                                                             self.buffer[agent_id].obs[step],
                                                             self.buffer[agent_id].rnn_states[step],
                                                             self.buffer[agent_id].rnn_states_critic[step],
+                                                            self.buffer[agent_id].cell_states[step],
+                                                            self.buffer[agent_id].cell_states_critic[step],
                                                             self.buffer[agent_id].masks[step],
                                                             self.buffer[agent_id].available_actions[step])
             # value, action, action_log_prob, rnn_state, rnn_state_critic \
@@ -270,6 +274,8 @@ class CRunner(Runner):
             action_log_prob_collector.append(_t2n(action_log_prob))
             rnn_state_collector.append(_t2n(rnn_state))
             rnn_state_critic_collector.append(_t2n(rnn_state_critic))
+            cell_state_collector.append(_t2n(cell_state))
+            cell_state_critic_collector.append(_t2n(cell_state_critic))
 
         # [self.envs, agents, dim]
         # actions_env = []
@@ -289,12 +295,14 @@ class CRunner(Runner):
         rnn_states = np.array(rnn_state_collector).transpose(1, 0, 2, 3)
         rnn_states_critic = np.array(
             rnn_state_critic_collector).transpose(1, 0, 2, 3)
-
-        return values, actions, action_log_probs, rnn_states, rnn_states_critic
+        cell_states = np.array(cell_state_collector).transpose(1, 0, 2, 3)
+        cell_states_critic = np.array(
+            cell_state_critic_collector).transpose(1, 0, 2, 3)
+        return values, actions, action_log_probs, rnn_states, rnn_states_critic, cell_states, cell_states_critic
 
     def insert(self, data):
         obs, share_obs_critic, rewards, dones, infos, available_actions, \
-            values, actions, action_log_probs, rnn_states, rnn_states_critic = data
+            values, actions, action_log_probs, rnn_states, rnn_states_critic, cell_states, cell_states_critic = data
 
         dones_env = np.all(dones, axis=1)
         if self.all_args.central_controller:
@@ -303,6 +311,11 @@ class CRunner(Runner):
         ), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
         rnn_states_critic[dones_env == True] = np.zeros(((dones_env == True).sum(
         ), self.num_agents, *self.buffer[0].rnn_states_critic.shape[2:]), dtype=np.float32)
+
+        cell_states[dones_env == True] = np.zeros(((dones_env == True).sum(
+        ), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
+        cell_states_critic[dones_env == True] = np.zeros(((dones_env == True).sum(
+        ), self.num_agents, *self.buffer[0].cell_states_critic.shape[2:]), dtype=np.float32)
 
         masks = np.ones(
             (self.n_rollout_threads, self.num_agents, 1), dtype=np.float32)
@@ -324,7 +337,8 @@ class CRunner(Runner):
             share_obs_critic_ = np.array(list(share_obs_critic[:, agent_id]))
 
             self.buffer[agent_id].insert(share_obs_critic_, policy_observation_space, rnn_states[:, agent_id],
-                                         rnn_states_critic[:, agent_id], actions[:,
+                                         rnn_states_critic[:, agent_id],cell_states[:, agent_id],
+                                         cell_states_critic[:, agent_id], actions[:,
                                                                                  agent_id], action_log_probs[:, agent_id],
                                          values[:, agent_id], rewards[:, agent_id], masks[:, agent_id])
 
@@ -363,6 +377,10 @@ class CRunner(Runner):
             (n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
         eval_rnn_states_critic = np.zeros(
             (n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
+        eval_cell_states = np.zeros(
+            (n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
+        eval_cell_states_critic = np.zeros(
+            (n_eval_rollout_threads, self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
         eval_masks = np.ones(
             (n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)
 
@@ -378,23 +396,30 @@ class CRunner(Runner):
                 self.trainer[agent_id].policy.hist_demand = envs.get_hist_demand()[
                     0][agent_id]
                 self.trainer[agent_id].prep_rollout()
-                eval_value, eval_actions, _, temp_rnn_state, temp_rnn_state_critic\
+                eval_value, eval_actions, _, temp_rnn_state, temp_rnn_state_critic,temp_cell_state, temp_cell_state_critic\
                     = self.trainer[agent_id].policy.get_actions(eval_obs_critic[:, agent_id],
                                                                 eval_obs[:,
                                                                          agent_id],
                                                                 eval_rnn_states[:,
                                                                                 agent_id],
                                                                 eval_rnn_states_critic[:,
-                                                                                       agent_id],
+                                                                                agent_id],
+                                                                eval_cell_states[:,
+                                                                                agent_id],
+                                                                eval_cell_states_critic[:,
+                                                                                agent_id],
                                                                 eval_masks[:,
                                                                            agent_id],
                                                                 None,
-                                                                deterministic=True)
+                                                                deterministic=True,)
                 eval_values.append(eval_value.detach().cpu())
 
                 eval_rnn_states[:, agent_id] = _t2n(temp_rnn_state)
                 eval_rnn_states_critic[:, agent_id] = _t2n(
                     temp_rnn_state_critic)
+                eval_cell_states[:, agent_id] = _t2n(temp_cell_state)
+                eval_cell_states_critic[:, agent_id] = _t2n(
+                    temp_cell_state_critic)
                 action = eval_actions.detach().cpu().numpy()
                 eval_actions_collector.append(action)
 
@@ -423,6 +448,10 @@ class CRunner(Runner):
             eval_rnn_states[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(
             ), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
             eval_rnn_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(
+            ), self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
+            eval_cell_states[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(
+            ), self.num_agents, self.recurrent_N, self.hidden_size), dtype=np.float32)
+            eval_cell_states_critic[eval_dones_env == True] = np.zeros(((eval_dones_env == True).sum(
             ), self.num_agents, self.recurrent_N, self.hidden_size_critic), dtype=np.float32)
             eval_masks = np.ones(
                 (n_eval_rollout_threads, self.num_agents, 1), dtype=np.float32)

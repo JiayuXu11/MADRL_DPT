@@ -67,7 +67,7 @@ class HAPPO_Policy:
         update_step_schedule(self.critic_optimizer, self.lr_decay_stepsize,
                              self.lr_decay_gamma, episode, episodes, self.critic_lr)
 
-    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, masks, available_actions=None,
+    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic,cell_states_actor,cell_states_critic, masks, available_actions=None,
                     deterministic=False):
         """
         Compute actions and value function predictions for the given inputs.
@@ -86,17 +86,18 @@ class HAPPO_Policy:
         :return rnn_states_actor: (torch.Tensor) updated actor network RNN states.
         :return rnn_states_critic: (torch.Tensor) updated critic network RNN states.
         """
-        actions, action_log_probs, rnn_states_actor = self.actor(obs,
+        actions, action_log_probs, rnn_states_actor,cell_states_actor = self.actor(obs,
                                                                  rnn_states_actor,
+                                                                 cell_states_actor,
                                                                  masks,
                                                                  available_actions,
                                                                  deterministic)
 
-        values, rnn_states_critic = self.critic(
-            cent_obs, rnn_states_critic, masks)
-        return values, actions, action_log_probs, rnn_states_actor, rnn_states_critic
+        values, rnn_states_critic,cell_states_critic = self.critic(
+            cent_obs, rnn_states_critic,cell_states_critic, masks)
+        return values, actions, action_log_probs, rnn_states_actor, rnn_states_critic,cell_states_actor,cell_states_critic
 
-    def get_values(self, cent_obs, rnn_states_critic, masks):
+    def get_values(self, cent_obs, rnn_states_critic, cell_states_critic, masks):
         """
         Get value function predictions.
         :param cent_obs (np.ndarray): centralized input to the critic.
@@ -105,10 +106,10 @@ class HAPPO_Policy:
 
         :return values: (torch.Tensor) value function predictions.
         """
-        values, _ = self.critic(cent_obs, rnn_states_critic, masks)
+        values, _, _ = self.critic(cent_obs, rnn_states_critic,cell_states_critic, masks)
         return values
 
-    def evaluate_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, action, masks,
+    def evaluate_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, cell_states_actor, cell_states_critic, action, masks,
                          available_actions=None, active_masks=None):
         """
         Get action logprobs / entropy and value function predictions for actor update.
@@ -129,15 +130,16 @@ class HAPPO_Policy:
 
         action_log_probs, dist_entropy = self.actor.evaluate_actions(obs,
                                                                      rnn_states_actor,
+                                                                     cell_states_actor,
                                                                      action,
                                                                      masks,
                                                                      available_actions,
                                                                      active_masks)
 
-        values, _ = self.critic(cent_obs, rnn_states_critic, masks)
+        values, _, _ = self.critic(cent_obs, rnn_states_critic,cell_states_critic, masks)
         return values, action_log_probs, dist_entropy
 
-    def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False):
+    def act(self, obs, rnn_states_actor, cell_states_actor, masks, available_actions=None, deterministic=False):
         """
         Compute actions using the given inputs.
         :param obs (np.ndarray): local agent inputs to the actor.
@@ -147,6 +149,6 @@ class HAPPO_Policy:
                                   (if None, all actions available)
         :param deterministic: (bool) whether the action should be mode of distribution or should be sampled.
         """
-        actions, _, rnn_states_actor = self.actor(
-            obs, rnn_states_actor, masks, available_actions, deterministic)
-        return actions, rnn_states_actor
+        actions, _, rnn_states_actor,cell_states_actor = self.actor(
+            obs, rnn_states_actor, cell_states_actor, masks, available_actions, deterministic)
+        return actions, rnn_states_actor,cell_states_actor

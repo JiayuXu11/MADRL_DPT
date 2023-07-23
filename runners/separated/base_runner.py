@@ -201,6 +201,7 @@ class Runner(object):
             self.trainer[agent_id].prep_rollout()
             next_value = self.trainer[agent_id].policy.get_values(self.buffer[agent_id].share_obs[-1],
                                                                   self.buffer[agent_id].rnn_states_critic[-1],
+                                                                  self.buffer[agent_id].cell_states_critic[-1],
                                                                   self.buffer[agent_id].masks[-1])
             next_value = _t2n(next_value)
             self.buffer[agent_id].compute_returns(
@@ -223,6 +224,8 @@ class Runner(object):
             old_actions_logprob, _ = self.trainer[agent_id].policy.actor.evaluate_actions(self.buffer[agent_id].obs[:-1].reshape(-1, *self.buffer[agent_id].obs.shape[2:]),
                                                                                           self.buffer[agent_id].rnn_states[0:1].reshape(
                                                                                               -1, *self.buffer[agent_id].rnn_states.shape[2:]),
+                                                                                          self.buffer[agent_id].cell_states[0:1].reshape(
+                                                                                              -1, *self.buffer[agent_id].cell_states.shape[2:]),
                                                                                           self.buffer[agent_id].actions.reshape(
                                                                                               -1, *self.buffer[agent_id].actions.shape[2:]),
                                                                                           self.buffer[agent_id].masks[:-
@@ -235,6 +238,8 @@ class Runner(object):
             new_actions_logprob, _ = self.trainer[agent_id].policy.actor.evaluate_actions(self.buffer[agent_id].obs[:-1].reshape(-1, *self.buffer[agent_id].obs.shape[2:]),
                                                                                           self.buffer[agent_id].rnn_states[0:1].reshape(
                                                                                               -1, *self.buffer[agent_id].rnn_states.shape[2:]),
+                                                                                          self.buffer[agent_id].cell_states[0:1].reshape(
+                                                                                              -1, *self.buffer[agent_id].cell_states.shape[2:]),
                                                                                           self.buffer[agent_id].actions.reshape(
                                                                                               -1, *self.buffer[agent_id].actions.shape[2:]),
                                                                                           self.buffer[agent_id].masks[:-

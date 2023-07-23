@@ -50,10 +50,10 @@ class Heuristic_Policy:
     def lr_decay(self, episode, episodes):
         pass
 
-    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic, masks, available_actions=None,
+    def get_actions(self, cent_obs, obs, rnn_states_actor, rnn_states_critic,cell_states_actor, cell_states_critic, masks, available_actions=None,
                     deterministic=False):
-        actions,temp_rnn_state=self.act(obs,rnn_states_actor,None)
-        return torch.tensor([[0.]]), actions,None,temp_rnn_state,torch.tensor(rnn_states_critic)
+        actions,temp_rnn_state,temp_cell_state=self.act(obs,rnn_states_actor,cell_states_actor, None)
+        return torch.tensor([[0.]]), actions,None,temp_rnn_state,torch.tensor(rnn_states_critic),temp_cell_state,torch.tensor(cell_states_critic)
 
     def get_values(self, cent_obs, rnn_states_critic, masks):
         pass
@@ -63,7 +63,7 @@ class Heuristic_Policy:
         pass
 
 
-    def act(self, obs, rnn_states_actor, masks, available_actions=None, deterministic=False,safety_stock=0):
+    def act(self, obs, rnn_states_actor,cell_states_actor, masks, available_actions=None, deterministic=False,safety_stock=0):
         """
         Compute actions using the given inputs.
         :param obs (np.ndarray): local agent inputs to the actor.
@@ -101,5 +101,5 @@ class Heuristic_Policy:
 
         # if step >195:
         #     order_heu = 0
-        return torch.tensor([[order_heu,np.random.randint(-10,10)]]), torch.tensor(rnn_states_actor)
+        return torch.tensor([[order_heu,np.random.randint(-10,10)]]), torch.tensor(rnn_states_actor),torch.tensor(cell_states_actor)
     

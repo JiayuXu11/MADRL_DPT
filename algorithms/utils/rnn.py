@@ -5,12 +5,20 @@ import torch.nn as nn
 
 
 class RNNLayer(nn.Module):
-    def __init__(self, inputs_dim, outputs_dim, recurrent_N, use_orthogonal):
+    def __init__(self, inputs_dim, outputs_dim, recurrent_N, use_orthogonal,rnn_name='GRU'):
         super(RNNLayer, self).__init__()
         self._recurrent_N = recurrent_N
         self._use_orthogonal = use_orthogonal
 
-        self.rnn = nn.GRU(inputs_dim, outputs_dim, num_layers=self._recurrent_N)
+        
+        if rnn_name == "GRU":
+            self.rnn = nn.GRU(inputs_dim, outputs_dim, num_layers=self._recurrent_N)
+        elif rnn_name == "LSTM":
+            self.rnn = nn.LSTM(inputs_dim, outputs_dim, num_layers=self._recurrent_N)
+        elif rnn_name == "RNN":
+            self.rnn = nn.RNN(inputs_dim, outputs_dim, num_layers=self._recurrent_N)
+        else:
+            raise ValueError("Invalid RNN type. Please choose from 'GRU', 'LSTM', or 'RNN'.")
 
         # # 一些实验（开始）
         # def print_name(m):
@@ -28,10 +36,18 @@ class RNNLayer(nn.Module):
                     nn.init.xavier_uniform_(param)
         self.norm = nn.LayerNorm(outputs_dim)
 
-    def forward(self, x, hxs, masks):
+    def forward(self, x, hxs, hcs, masks):
         if x.size(0) == hxs.size(0):
-            x, hxs = self.rnn(x.unsqueeze(0),
-                              (hxs * masks.repeat(1, self._recurrent_N).unsqueeze(-1)).transpose(0, 1).contiguous())
+            if isinstance(self.rnn, nn.LSTM):
+                hidden_state = ((hxs * masks.repeat(1, self._recurrent_N).unsqueeze(-1)).transpose(0, 1).contiguous(),
+                                (hcs * masks.repeat(1, self._recurrent_N).unsqueeze(-1)).transpose(0, 1).contiguous())
+                x, (hxs,hcs) =self.rnn(x.unsqueeze(0),hidden_state)
+
+                hcs = hcs.transpose(0,1)
+            else:
+                x, hxs = self.rnn(x.unsqueeze(0),
+                                  (hxs * masks.repeat(1, self._recurrent_N).unsqueeze(-1)).transpose(0, 1).contiguous())
+                
             x = x.squeeze(0)
             hxs = hxs.transpose(0, 1)
         else:
@@ -64,6 +80,7 @@ class RNNLayer(nn.Module):
             has_zeros = [0] + has_zeros + [T]
 
             hxs = hxs.transpose(0, 1)
+            hcs = hcs.transpose(0,1)
 
             outputs = []
             for i in range(len(has_zeros) - 1):
@@ -71,8 +88,14 @@ class RNNLayer(nn.Module):
                 # This is much faster
                 start_idx = has_zeros[i]
                 end_idx = has_zeros[i + 1]
-                temp = (hxs * masks[start_idx].view(1, -1, 1).repeat(self._recurrent_N, 1, 1)).contiguous()
-                rnn_scores, hxs = self.rnn(x[start_idx:end_idx], temp)
+                if isinstance(self.rnn, nn.LSTM):
+                    temp = ((hxs * masks[start_idx].view(1, -1, 1).repeat(self._recurrent_N, 1, 1)).contiguous(),
+                            (hcs * masks[start_idx].view(1, -1, 1).repeat(self._recurrent_N, 1, 1)).contiguous(),)
+                    rnn_scores, (hxs,hcs) = self.rnn(x[start_idx:end_idx], temp)
+                else:
+                    temp = (hxs * masks[start_idx].view(1, -1, 1).repeat(self._recurrent_N, 1, 1)).contiguous()
+                    rnn_scores, hxs = self.rnn(x[start_idx:end_idx], temp)
+
                 outputs.append(rnn_scores)
 
             # assert len(outputs) == T
@@ -82,6 +105,7 @@ class RNNLayer(nn.Module):
             # flatten
             x = x.reshape(T * N, -1)
             hxs = hxs.transpose(0, 1)
+            hcs = hcs.transpose(0, 1)
 
         x = self.norm(x)
-        return x, hxs
+        return x, hxs, hcs
