@@ -1,6 +1,6 @@
 import numpy as np
 
-n = 10  # 点的数量
+n = 18  # 点的数量
 a = 0  # 随机点的坐标范围
 b = 10
 
@@ -25,4 +25,11 @@ scaled_matrix = np.round(scaled_matrix).astype(int)
 # matrix = np.full((n,n),1000)
 # np.fill_diagonal(matrix, 0)
 # scaled_matrix = np.round(matrix).astype(int)
-# print(repr(matrix))
+print(repr(scaled_matrix))
+
+# 保存距离矩阵
+np.savetxt('distance_matrix.txt', scaled_matrix, fmt='%d', delimiter=',')
+
+    
+# # 读取距离矩阵
+# dist_matrix = np.loadtxt('distance_matrix.txt', dtype=int, delimiter=',')
