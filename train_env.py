@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
     all_args = parse_args(sys.argv[1:], parser)
 
-        # 这个后面记得删掉
-    all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
+    # 这个后面记得删掉
+    # all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
 
     if all_args.yaml_path:
         with open(all_args.yaml_path, 'r') as f:
