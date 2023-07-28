@@ -46,12 +46,18 @@ def parse_args(args, parser):
 
 
 if __name__ == "__main__":
+
+    # 判断是否有cuda，没有就报错
+    if not torch.cuda.is_available():
+        print("no cuda available")
+        sys.exit(1)
+
     parser = get_config()
 
     all_args = parse_args(sys.argv[1:], parser)
 
     # 这个后面记得删掉
-    # all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
+    all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
 
     if all_args.yaml_path:
         with open(all_args.yaml_path, 'r') as f:
@@ -60,7 +66,9 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
-    # all_args.num_agents = 18
+    # all_args.model_dir = 'setting_yaml/error_model/models_07'
+
+    # all_args.num_agents = 3
     # all_args.demand_for_action_dim = [50,20,30]
 
     # 最后leadtime天的行动不参与训练
