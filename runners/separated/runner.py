@@ -34,7 +34,14 @@ class CRunner(Runner):
             if episode % self.eval_interval == 0 and self.use_eval:
                 re, dict_write = self.eval_para(test_tf=False)
                 dict_write.update({'return': re})
-                self.writter.add_scalars('cost_graph', dict_write, episode)
+                # 删除dict_write某些key,原dict_write不变
+                dict_write_tb = dict_write.copy()
+                dict_write_tb.pop('transship_pos_fill_rate')
+                dict_write_tb.pop('transship_neg_fill_rate')
+                dict_write_tb.pop('transship_fill_rate')
+
+                # dict_write.pop('return')
+                self.writter.add_scalars('cost_graph', dict_write_tb, episode)
                 print("Eval average cost: ", re,
                       " Eval cost composition: ", dict_write)
                 print("Best Eval average cost(before): ", best_reward)
@@ -366,9 +373,13 @@ class CRunner(Runner):
         shipping_cost_pure = 0
         ordering_times = 0
         demand_fulfilled = 0
-        transship_amount_all = 0
-        transship_intend_pos = 0
-        transship_intend_neg = 0
+
+
+        transship_amount_pos_per_agent = [0,]*self.num_involver
+        transship_amount_neg_per_agent = [0,]*self.num_involver
+        transship_intend_neg_per_agent = [0,]*self.num_involver
+        transship_intend_pos_per_agent = [0,]*self.num_involver
+
 
         eval_obs, eval_obs_critic = envs.reset(
             normalize=self.all_args.norm_input)
@@ -465,9 +476,11 @@ class CRunner(Runner):
                 eval_info = eval_infos[eval_index]
 
                 for a in range(self.num_involver):
-                    transship_amount_all += eval_info[a]['transship'] if eval_info[a]['transship'] > 0 else 0
-                    transship_intend_pos += eval_info[a]['transship_intend'] if eval_info[a]['transship_intend'] > 0 else 0
-                    transship_intend_neg += eval_info[a]['transship_intend'] if eval_info[a]['transship_intend'] < 0 else 0
+
+                    transship_amount_pos_per_agent[a] += max(eval_info[a]['transship'],0)
+                    transship_amount_neg_per_agent[a] += -min(eval_info[a]['transship'],0)
+                    transship_intend_pos_per_agent[a] += max(eval_info[a]['transship_intend'],0)
+                    transship_intend_neg_per_agent[a] += -min(eval_info[a]['transship_intend'],0) 
                     penalty_cost_all += eval_info[a]['penalty_cost']
                     ordering_cost_all += eval_info[a]['ordering_cost']
                     holding_cost_all += eval_info[a]['holding_cost']
@@ -505,7 +518,14 @@ class CRunner(Runner):
                                              global_step=step)
         num_all = n_eval_rollout_threads*self.episode_length*self.num_involver
         all_demand_mean = self.demand_mean_test if test_tf else self.demand_mean_val
-        dict_cost = {"transship_amount_all": transship_amount_all/num_all,"transship_intend_pos": transship_intend_pos/num_all,"transship_intend_neg": transship_intend_neg/num_all, "shipping_cost_all": shipping_cost_all/num_all, "shipping_cost_pure": shipping_cost_pure/num_all, "holding_cost": holding_cost_all/num_all,
+        # pos_fill_rate为transship_amount 除以transship_intend_pos
+        # neg_fill_rate为transship_amount 除以transship_intend_neg
+        transship_pos_fill_rate = [transship_amount_pos_per_agent[i]/transship_intend_pos_per_agent[i] for i in range(self.num_involver)]
+        transship_neg_fill_rate = [transship_amount_neg_per_agent[i]/transship_intend_neg_per_agent[i] for i in range(self.num_involver)]
+        transship_fill_rate = [(transship_amount_pos_per_agent[i]+transship_amount_neg_per_agent[i])/(transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i]) for i in range(self.num_involver)]
+        dict_cost = {"transship_amount_all": sum(transship_amount_pos_per_agent)/num_all,"transship_intend_pos": sum(transship_intend_pos_per_agent)/num_all,"transship_intend_neg": sum(transship_intend_neg_per_agent)/num_all,
+                      'transship_pos_fill_rate':transship_pos_fill_rate,'transship_neg_fill_rate':transship_neg_fill_rate,"transship_fill_rate":transship_fill_rate,
+                      "shipping_cost_all": shipping_cost_all/num_all, "shipping_cost_pure": shipping_cost_pure/num_all, "holding_cost": holding_cost_all/num_all,
                      "ordering_cost": ordering_cost_all/num_all, "penalty_cost": penalty_cost_all/num_all, "ordering_times": ordering_times/n_eval_rollout_threads/self.num_involver, 'fill_rate': demand_fulfilled/num_all/all_demand_mean}
         norm_reward_drift = self.all_args.reward_norm_multiplier * \
             all_demand_mean if 'norm' in self.all_args.reward_type else 0
