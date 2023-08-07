@@ -10,6 +10,17 @@ DISTANCE = [np.loadtxt('envs/distance/distance_matrix_0.txt', delimiter=',').ast
             np.loadtxt('envs/distance/distance_matrix_2.txt', delimiter=',').astype(int),
             np.loadtxt('envs/distance/distance_matrix_3.txt', delimiter=',').astype(int),]
 
+demand_mean = {'SKU006': [16, 46, 8, 13, 22, 57, 14, 17, 5, 42, 14, 15, 18, 16, 37, 19, 25, 19],
+               'SKU019': [24, 55, 12, 37, 28, 34, 9, 9, 4, 22, 8, 9, 13, 8, 20, 7, 17, 13],
+               'SKU022': [11, 52, 9, 21, 22, 25, 3, 3, 1, 8, 2, 3, 3, 2, 8, 2, 10, 6],
+               'SKU023': [17, 52, 9, 23, 24, 29, 6, 6, 3, 19, 8, 8, 14, 7, 20, 8, 15, 10],
+               'SKU025': [30, 61, 13, 25, 27, 44, 4, 2, 0, 24, 8, 2, 6, 4, 22, 6, 13, 5],
+               'SKU029': [47, 74, 44, 28, 60, 53, 16, 8, 2, 44, 10, 14, 8, 12, 24, 16, 15, 7],
+               'SKU032': [26, 44, 8, 30, 22, 28, 6, 7, 3, 24, 10, 2, 18, 7, 31, 9, 19, 8],
+               'SKU034': [19, 60, 29, 18, 26, 45, 14, 5, 3, 22, 5, 10, 6, 5, 23, 9, 15, 12],
+               'SKU045': [19, 60, 29, 18, 26, 45, 14, 5, 3, 22, 5, 10, 6, 5, 23, 9, 15, 12],
+               'SKU046': [37, 64, 24, 31, 42, 50, 14, 6, 3, 23, 9, 8, 7, 6, 25, 12, 23, 10],
+               'SKU062': [35, 62, 19, 27, 45, 50, 10, 4, 2, 26, 10, 7, 8, 6, 26, 11, 17, 8]}
 S_I = 10
 S_O = 10
 
@@ -35,7 +46,7 @@ class Env(object):
         self.train_path = args.train_dir
         self.SKU_id = args.SKU_id
         self.demand_max_for_clip = args.demand_max_for_clip
-        
+         
         # cost parameter
         self.H = args.H  # holding cost
         self.R = args.R  # selling price per unit (only used for reward)
@@ -158,13 +169,21 @@ class Env(object):
         elif(self.generator_method=='shanshu_arima'):
              demand_list = [generator.shanshu_arima(self.SKU_id,i,2*EPISODE_LEN,self.demand_max_for_clip).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='shanshu_sampling'):
+            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
+            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.shanshu_sampling(i,2*EPISODE_LEN, 1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='align_random_fragment'):
+            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
+            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             start = random.randint(0,500)
             demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,start).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_fragment'):
+            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
+            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,random.randint(0,500)).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_resample'):
+            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
+            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.random_resample(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
         return demand_list
 

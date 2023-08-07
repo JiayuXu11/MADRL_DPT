@@ -48,16 +48,16 @@ def parse_args(args, parser):
 if __name__ == "__main__":
 
     # 判断是否有cuda，没有就报错
-    if not torch.cuda.is_available():
-        print("no cuda available")
-        sys.exit(1)
+    # if not torch.cuda.is_available():
+    #     print("no cuda available")
+    #     sys.exit(1)
 
     parser = get_config()
 
     all_args = parse_args(sys.argv[1:], parser)
 
     # 这个后面记得删掉
-    all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
+    # all_args.yaml_path = 'setting_yaml/multi_discrete/baseline_SKU029_mean.yaml'
 
     if all_args.yaml_path:
         with open(all_args.yaml_path, 'r') as f:
