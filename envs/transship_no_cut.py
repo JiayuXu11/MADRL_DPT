@@ -17,10 +17,19 @@ demand_mean = {'SKU006': [16, 46, 8, 13, 22, 57, 14, 17, 5, 42, 14, 15, 18, 16, 
                'SKU025': [30, 61, 13, 25, 27, 44, 4, 2, 0, 24, 8, 2, 6, 4, 22, 6, 13, 5],
                'SKU029': [47, 74, 44, 28, 60, 53, 16, 8, 2, 44, 10, 14, 8, 12, 24, 16, 15, 7],
                'SKU032': [26, 44, 8, 30, 22, 28, 6, 7, 3, 24, 10, 2, 18, 7, 31, 9, 19, 8],
-               'SKU034': [19, 60, 29, 18, 26, 45, 14, 5, 3, 22, 5, 10, 6, 5, 23, 9, 15, 12],
                'SKU045': [19, 60, 29, 18, 26, 45, 14, 5, 3, 22, 5, 10, 6, 5, 23, 9, 15, 12],
                'SKU046': [37, 64, 24, 31, 42, 50, 14, 6, 3, 23, 9, 8, 7, 6, 25, 12, 23, 10],
                'SKU062': [35, 62, 19, 27, 45, 50, 10, 4, 2, 26, 10, 7, 8, 6, 26, 11, 17, 8]}
+demand_max = {'SKU006': [64, 170, 32, 49, 75, 199, 60, 71, 19, 162, 60, 62, 75, 62, 150, 75, 101, 87],
+               'SKU019': [89, 198, 49, 132, 107, 126, 36, 37, 18, 85, 32, 37, 49, 34, 81, 29, 71, 51],
+               'SKU022': [45, 199, 37, 82, 85, 91, 14, 11, 5, 32, 9, 12, 11, 7, 31, 10, 40, 23],
+               'SKU023': [65, 200, 37, 88, 90, 112, 23, 22, 12, 77, 32, 34, 54, 29, 83, 33, 61, 39],
+               'SKU025': [85, 198, 35, 86, 70, 143, 18, 7, 1, 90, 31, 8, 26, 18, 85, 23, 49, 21],
+               'SKU029': [129, 200, 104, 82, 154, 141, 61, 32, 7, 174, 40, 57, 31, 47, 92, 61, 51, 28],
+               'SKU032': [104, 173, 35, 118, 89, 110, 22, 30, 11, 96, 42, 8, 69, 28, 120, 34, 77, 32],
+               'SKU045': [56, 199, 83, 58, 72, 141, 46, 19, 12, 82, 21, 40, 24, 20, 88, 35, 56, 46],
+               'SKU046': [96, 198, 59, 100, 109, 153, 59, 26, 12, 91, 35, 34, 26, 26, 96, 46, 85, 41],
+               'SKU062': [94, 198, 49, 88, 125, 154, 39, 16, 9, 103, 38, 27, 31, 24, 101, 41, 60, 35]}
 S_I = 10
 S_O = 10
 
@@ -78,8 +87,8 @@ class Env(object):
         self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, self.critic_obs_step)
 
         # 根据这个来调action_dim,如果为空，就还是原来的ACTION_DIM_DICT那种
-        self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
-
+        # self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
+        self.demand_for_action_dim = demand_mean[str(self.SKU_id)] if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
         # ACTION_DIM_DICT = {'discrete':(DEMAND_MAX*2+1)*(DEMAND_MAX+1),'multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1],'continue':2, 'central_multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1]*self.agent_num, 'central_discrete':[(DEMAND_MAX*2+1)*(DEMAND_MAX+1)]*self.agent_num}
         self.action_type = args.action_type
 
@@ -169,21 +178,13 @@ class Env(object):
         elif(self.generator_method=='shanshu_arima'):
              demand_list = [generator.shanshu_arima(self.SKU_id,i,2*EPISODE_LEN,self.demand_max_for_clip).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='shanshu_sampling'):
-            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
-            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.shanshu_sampling(i,2*EPISODE_LEN, 1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='align_random_fragment'):
-            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
-            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             start = random.randint(0,500)
             demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,start).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_fragment'):
-            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
-            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,random.randint(0,500)).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_resample'):
-            self.train_path = 'transship/train_data/{}'.format(str(self.SKU_id))
-            self.demand_max_for_clip = demand_mean[str(self.SKU_id)]
             demand_list = [generator.random_resample(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
         return demand_list
 

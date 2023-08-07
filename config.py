@@ -306,7 +306,7 @@ def get_config():
     parser.add_argument("--train_dir", type=str, 
                         default="./train_data/SKU029", help="训练集目录(./xx/xx的格式)")
     parser.add_argument("--SKU_id", type=str, 
-                        default="SKU006", help="index of tested SKU")
+                        default=None, help="index of tested SKU")
 
     parser.add_argument("--demand_info_for_critic", type=str,
                         default=['quantile', 'LT_all'], choices=['quantile', 'LT_all'], help="给critic network披露的未来需求信息")
@@ -355,7 +355,7 @@ def get_config():
                     default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
     # 只在shanshu_arima里用
     parser.add_argument("--demand_max_for_clip", type=list, 
-                    default=[129, 200, 104, 82, 154, 141, 61, 32, 7, 174, 40, 57, 31, 47, 92, 61, 51, 28],help="跟据该list设定action dim。eg. [10,15,20] ")
+                    default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
     
     parser.add_argument("--use_factor", type=t_or_f, 
                         default=True,help="用不用sequential factor")

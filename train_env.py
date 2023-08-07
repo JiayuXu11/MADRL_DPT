@@ -66,6 +66,15 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+    demand_mean = np.load('envs/demand_mean.npy',allow_pickle=True).item()
+    demand_max = np.load('envs/demand_max.npy',allow_pickle=True).item()
+    if all_args.SKU_id:
+        all_args.test_dir = './test_data/{}'.format(all_args.SKU_id) 
+        all_args.eval_dir = './eval_data/{}'.format(all_args.SKU_id)
+        all_args.train_dir = './train_data/{}'.format(all_args.SKU_id)
+        all_args.demand_for_action_dim = demand_mean[str(all_args.SKU_id)]
+        all_args.demand_max_for_clip = demand_max[str(all_args.SKU_id)]
+
     # all_args.model_dir = 'setting_yaml/error_model/models_07'
 
     # all_args.num_agents = 3
