@@ -52,6 +52,7 @@ class Env(object):
         self.agent_num = args.num_involver
         self.lead_time = args.lead_time
         self.demand_info_for_critic=args.demand_info_for_critic
+        self.if_transship = args.if_transship
         self.train_path = args.train_dir
         self.SKU_id = args.SKU_id
         self.demand_max_for_clip = args.demand_max_for_clip
@@ -373,27 +374,30 @@ class Env(object):
         else:
             raise Exception("wrong action_type")
         
-        self.transship_intend=transship_amounts.copy()
+        if self.if_transship:
+            self.transship_intend=transship_amounts.copy()
 
-        if self.homo_distance:
-            self.transship_merge_homo(transship_amounts)
-        elif self.mini_pooling["flag"]:
-            self.transship_merge_mp(transship_amounts, threshold=self.mini_pooling['threshold'], how=self.mini_pooling['how'])
+            if self.homo_distance:
+                self.transship_merge_homo(transship_amounts)
+            elif self.mini_pooling["flag"]:
+                self.transship_merge_mp(transship_amounts, threshold=self.mini_pooling['threshold'], how=self.mini_pooling['how'])
+            else:
+                for a1,a2 in self.shipping_order:
+                    if a1<self.agent_num and a2<self.agent_num:
+                        # 表示一个想要货，一个想出货
+                        if transship_amounts[a1]*transship_amounts[a2]<0:
+                            tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
+                            self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
+                            self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
+                            transship_amounts[a1]-=self.transship_matrix[a1][a2]
+                            transship_amounts[a2]-=self.transship_matrix[a2][a1]
+
+            # # 最后几天订的货，因为leadtime原因也到不了
+            # if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
+            #     order_amounts = [0 for _ in range(self.agent_num)]
+            transship_amounts= [sum(self.transship_matrix[i]) for i in range(self.agent_num)]
         else:
-            for a1,a2 in self.shipping_order:
-                if a1<self.agent_num and a2<self.agent_num:
-                    # 表示一个想要货，一个想出货
-                    if transship_amounts[a1]*transship_amounts[a2]<0:
-                        tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
-                        self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
-                        self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
-                        transship_amounts[a1]-=self.transship_matrix[a1][a2]
-                        transship_amounts[a2]-=self.transship_matrix[a2][a1]
-
-        # # 最后几天订的货，因为leadtime原因也到不了
-        # if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
-        #     order_amounts = [0 for _ in range(self.agent_num)]
-        transship_amounts= [sum(self.transship_matrix[i]) for i in range(self.agent_num)]
+            transship_amounts = [0] * self.agent_num
         mapped_actions=[k for k in zip(order_amounts,transship_amounts)]
 
         return mapped_actions
