@@ -48,9 +48,9 @@ def parse_args(args, parser):
 if __name__ == "__main__":
 
     # 判断是否有cuda，没有就报错
-    # if not torch.cuda.is_available():
-    #     print("no cuda available")
-    #     sys.exit(1)
+    if not torch.cuda.is_available():
+        print("no cuda available")
+        sys.exit(1)
 
     parser = get_config()
 
