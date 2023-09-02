@@ -4,7 +4,9 @@ import numpy as np
 from matplotlib.pyplot import plot
 import chardet
 #EVAL_PTH = ["./eval_data/SKU029/0/", "./eval_data/SKU029/1/", "./eval_data/SKU029/2/"]
-EVAL_PTH = ["transship/eval_data/SKU029_tot/{}/".format(i) for i in range(3)]
+agent_num = 3
+price = 3
+EVAL_PTH = ["test_data/merton/{}/".format(i) for i in range(agent_num)]
 
 # EVAL_PTH = ["./shanshu_sampling_test/0/", "./shanshu_sampling_test/1/", "./shanshu_sampling_test/2/"]
 
@@ -43,13 +45,13 @@ def get_eval_data():
 n_eval,eval_data=get_eval_data()
 all_demand=0
 for n in range(n_eval):
-    for agent in range(3):
+    for agent in range(agent_num):
         for day in range(200):
             all_demand+=eval_data[n][agent][day]
-mean_demand=all_demand/n_eval/3/200
+mean_demand=all_demand/n_eval/agent_num/200
 print(mean_demand)
-print(mean_demand*3)
+print(mean_demand*price)
 print(mean_demand*2.4)
-a= merton(200, 20).demand_list
-plot(a)
-print(a)
+# a= merton(200, 20).demand_list
+# plot(a)
+# print(a)
