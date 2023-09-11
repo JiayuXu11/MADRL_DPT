@@ -46,15 +46,13 @@ class CRunner(Runner):
                       " Eval cost composition: ", dict_write)
                 print("Best Eval average cost(before): ", best_reward)
 
-                # re, dict_write = self.eval_para(test_tf=True)
-                # dict_write.update({'return': re})
-                # self.writter.add_scalars('cost_graph', dict_write, episode)
-                # print("Test average cost: ", re,
-                #       " Eval cost composition: ", dict_write)
-                # print("Best Eval average cost(before): ", best_reward)
-
-                # test_reward,_=self.eval(test_tf=True)
-                # print("Best Eval average reward: ", best_reward, " Best Test average reward: ", test_reward)
+                if not self.all_args.training_bf:
+                    re_test, dict_write_test = self.eval_para(test_tf=True)
+                    print("Test average cost: ", re_test,
+                    " Eval cost composition: ", dict_write_test)
+                    print("Best Eval average cost(before): ", best_reward)
+                    return re, dict_write, re_test, dict_write_test
+                
                 if (re > best_reward):
                     if episode > 0:
                         self.save()
