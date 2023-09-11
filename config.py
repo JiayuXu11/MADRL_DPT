@@ -273,7 +273,7 @@ def get_config():
     parser.add_argument("--train_episode_length", type=int,
                         default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计),不用管，会自动调节的")
 
-    parser.add_argument("--if_transship", type=bool,
+    parser.add_argument("--if_transship", type=t_or_f,
                         default=True, help="Whether allow transshipments within the system.")
     parser.add_argument("--transship_revenue_method", type=str,
                         default='constant', choices=['constant', 'ratio', 'market_ratio'], help="transship机制创造收益的分配模式")
