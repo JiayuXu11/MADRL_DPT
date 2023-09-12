@@ -79,10 +79,11 @@ class Env(object):
 
         # actor_obs
         self.instant_info_sharing=args.instant_info_sharing
+        self.adjusted_info_sharing = args.adjusted_info_sharing
         self.obs_transship=args.obs_transship
         self.actor_obs_step =args.actor_obs_step
         self.critic_obs_step = args.critic_obs_step
-        self.obs_dim = self.get_obs_dim(self.instant_info_sharing, self.actor_obs_step)
+        self.obs_dim = self.get_obs_dim(self.instant_info_sharing, self.adjusted_info_sharing, self.actor_obs_step)
         # critic_obs
         self.use_centralized_V = args.use_centralized_V
         self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, self.critic_obs_step)
@@ -190,7 +191,7 @@ class Env(object):
         return demand_list
 
 
-    def get_obs_dim(self, info_sharing, obs_step):
+    def get_obs_dim(self, info_sharing, adjusted_info_sharing, obs_step):
         base_dim = 2 + self.lead_time
         transship_dim = 2 
         step_dim = 1 if obs_step else 0
@@ -199,6 +200,8 @@ class Env(object):
 
         if info_sharing:
             return base_dim*self.agent_num + step_dim
+        if adjusted_info_sharing:
+            return 3*self.agent_num + step_dim + self.lead_time + transship_dim_dict[self.obs_transship]*transship_dim  # 3包含demand，inventory，intransit_sum
         
         return base_dim+transship_dim_dict[self.obs_transship]*transship_dim + step_dim
     
@@ -209,7 +212,7 @@ class Env(object):
         patial_info_sharing_dim = self.agent_num*2 if not info_sharing else 0
         # critic的输入不包含当期需求
         obs_diff = self.agent_num if info_sharing else 1
-        return self.get_obs_dim(info_sharing, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
+        return self.get_obs_dim(info_sharing, False, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
 
 
     def reset(self, train = True, normalize = True, demand_list_set = None):
@@ -252,7 +255,7 @@ class Env(object):
         else:
             self.demand_list = demand_list_set
 
-        sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) 
+        sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.adjusted_info_sharing,self.actor_obs_step) 
         critic_obs = self.get_step_obs_critic(self.use_centralized_V, self.critic_obs_step)
         
         return sub_agent_obs, critic_obs
@@ -293,7 +296,7 @@ class Env(object):
 
 
 
-        sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.actor_obs_step) # Get step obs
+        sub_agent_obs = self.get_step_obs(self.instant_info_sharing, self.adjusted_info_sharing, self.actor_obs_step) # Get step obs
         sub_agent_reward = self.get_processed_rewards(reward) # Get processed rewards
 
         if(self.step_num > self.episode_max_steps):
@@ -522,7 +525,7 @@ class Env(object):
         #             transship_amounts[a1]-=self.transship_matrix[a1][a2]
         #             transship_amounts[a2]-=self.transship_matrix[a2][a1]
         
-    def get_step_obs(self, info_sharing, obs_step, demand_today=True):
+    def get_step_obs(self, info_sharing, adjusted_info_sharing, obs_step, demand_today=True):
         """
         - Need to be implemented
         - Get step obs (obs for each step)
@@ -534,8 +537,10 @@ class Env(object):
         sub_agent_obs = []
 
         order_all = []
+        order_avg = []
         for k in range(self.agent_num):
-            order_all+=self.order[k]
+            order_all+= self.order[k]
+            order_avg+= [np.mean(self.order[k])]
 
         for i in range(self.agent_num):
 
@@ -543,6 +548,10 @@ class Env(object):
                 if i==0:
                     base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else self.demand_for_action_dim[k]/2) for k in range(self.agent_num)] if demand_today else []))
                     order_arr = np.array(order_all)
+            elif adjusted_info_sharing:
+                if i==0:
+                    base_arr = np.array(self.inventory + ([(self.demand_list[k][self.step_num-1] if self.step_num>0 else self.demand_for_action_dim[k]/2) for k in range(self.agent_num)] if demand_today else []))
+                order_arr = np.array(self.order[i] + order_avg)
             else:
                 base_arr = np.array([self.inventory[i],(self.demand_list[i][self.step_num-1] if self.step_num>0 else self.demand_for_action_dim[i]/2) ]) if demand_today else np.array([self.inventory[i]])
                 order_arr = np.array(self.order[i])
@@ -648,7 +657,7 @@ class Env(object):
 
     # critic network 专属obs
     def get_step_obs_critic(self, info_sharing, obs_step):
-        actor_agent_obs = self.get_step_obs(info_sharing, obs_step, False)
+        actor_agent_obs = self.get_step_obs(info_sharing, False, obs_step, False)
 
         self.set_demand_statistics()
 

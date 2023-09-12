@@ -33,7 +33,7 @@ class Runner(object):
         self.experiment_name = self.all_args.experiment_name
         # self.use_centralized_V = self.all_args.use_centralized_V
         # self.instant_info_sharing = self.all_args.instant_info_sharing or self.all_args.central_controller
-        self.delayed_info_sharing = self.all_args.delayed_info_sharing
+        self.adjusted_info_sharing = self.all_args.adjusted_info_sharing
         self.central_controller = self.all_args.central_controller
         self.use_obs_instead_of_state = self.all_args.use_obs_instead_of_state
         self.num_env_steps = self.all_args.num_env_steps

@@ -214,8 +214,8 @@ def get_config():
     parser.add_argument("--instant_info_sharing", type=t_or_f,
                         default=False, help="是否采用即时信息共享机制")
 
-    parser.add_argument("--delayed_info_sharing", type=t_or_f,
-                        default=False, help="是否采用滞后信息共享机制")
+    parser.add_argument("--adjusted_info_sharing", type=t_or_f,
+                        default=False, help="是否采用降维后的信息共享机制")
 
     parser.add_argument("--central_controller", type=t_or_f,
                         default=False, help="是否全部采用中央控制")
