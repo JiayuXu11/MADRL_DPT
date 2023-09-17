@@ -518,9 +518,9 @@ class CRunner(Runner):
         all_demand_mean = self.demand_mean_test if test_tf else self.demand_mean_val
         # pos_fill_rate为transship_amount 除以transship_intend_pos
         # neg_fill_rate为transship_amount 除以transship_intend_neg
-        transship_pos_fill_rate = [transship_amount_pos_per_agent[i]/transship_intend_pos_per_agent[i] for i in range(self.num_involver)]
-        transship_neg_fill_rate = [transship_amount_neg_per_agent[i]/transship_intend_neg_per_agent[i] for i in range(self.num_involver)]
-        transship_fill_rate = [(transship_amount_pos_per_agent[i]+transship_amount_neg_per_agent[i])/(transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i]) for i in range(self.num_involver)]
+        transship_pos_fill_rate = [transship_amount_pos_per_agent[i]/transship_intend_pos_per_agent[i] if transship_intend_pos_per_agent[i] else 0 for i in range(self.num_involver)]
+        transship_neg_fill_rate = [transship_amount_neg_per_agent[i]/transship_intend_neg_per_agent[i] if transship_intend_neg_per_agent[i] else 0 for i in range(self.num_involver)]
+        transship_fill_rate = [(transship_amount_pos_per_agent[i]+transship_amount_neg_per_agent[i])/(transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i]) if transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i] else 0  for i in range(self.num_involver)]
         dict_cost = {"transship_amount_all": sum(transship_amount_pos_per_agent)/num_all,"transship_intend_pos": sum(transship_intend_pos_per_agent)/num_all,"transship_intend_neg": sum(transship_intend_neg_per_agent)/num_all,
                       'transship_pos_fill_rate':transship_pos_fill_rate,'transship_neg_fill_rate':transship_neg_fill_rate,"transship_fill_rate":transship_fill_rate,
                       "shipping_cost_all": shipping_cost_all/num_all, "shipping_cost_pure": shipping_cost_pure/num_all, "holding_cost": holding_cost_all/num_all,
