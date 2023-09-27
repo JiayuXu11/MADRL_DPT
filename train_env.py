@@ -80,6 +80,7 @@ if __name__ == "__main__":
         all_args.demand_for_action_dim = demand_mean[str(all_args.SKU_id)]
         all_args.demand_max_for_clip = demand_max[str(all_args.SKU_id)]
         all_args.FIXED_COST_scale = scale_dict[str(all_args.SKU_id)] if all_args.use_scale else 1
+        all_args.FIXED_COST /= all_args.FIXED_COST_scale
 
     # all_args.model_dir = 'setting_yaml/error_model/models_07'
 
