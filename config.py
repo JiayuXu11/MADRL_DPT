@@ -338,6 +338,10 @@ def get_config():
                         default=2, help="ordering cost per unit")
     parser.add_argument("--FIXED_COST", type=float,
                         default=5, help="fixed cost for each order")
+    parser.add_argument("--use_scale", type=t_or_f,
+                        default=False, help="whether to use scale on fixed cost for each order(designed for shanshu)")
+    parser.add_argument("--FIXED_COST_scale", type=float,
+                        default=1, help="scale on fixed cost for each order(designed for shanshu)")
 
     parser.add_argument("--shipping_cost_per_distance", type=float,
                         default=0.0005, help="shipping_cost_per_distance")

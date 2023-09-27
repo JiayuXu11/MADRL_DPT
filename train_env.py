@@ -69,12 +69,17 @@ if __name__ == "__main__":
 
     demand_mean = np.load('envs/demand_mean.npy',allow_pickle=True).item()
     demand_max = np.load('envs/demand_max.npy',allow_pickle=True).item()
+    skus = ['SKU006', 'SKU019', 'SKU022', 'SKU023', 'SKU025', 'SKU029', 'SKU032',
+        'SKU045', 'SKU046', 'SKU062']
+    scales = [7, 53, 142, 237, 22, 25, 6, 98, 46, 20]
+    scale_dict = dict(zip(skus, scales))
     if all_args.SKU_id:
         all_args.test_dir = './test_data/{}'.format(all_args.SKU_id) 
         all_args.eval_dir = './eval_data/{}'.format(all_args.SKU_id)
         all_args.train_dir = './train_data/{}'.format(all_args.SKU_id)
         all_args.demand_for_action_dim = demand_mean[str(all_args.SKU_id)]
         all_args.demand_max_for_clip = demand_max[str(all_args.SKU_id)]
+        all_args.FIXED_COST_scale = scale_dict[str(all_args.SKU_id)] if all_args.use_scale else 1
 
     # all_args.model_dir = 'setting_yaml/error_model/models_07'
 
