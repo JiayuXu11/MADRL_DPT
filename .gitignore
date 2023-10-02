@@ -2,3 +2,5 @@ results/
 .vscode/
 __pycache__/
 .idea/
+compute_demand_mean.py
+cost2reward.csv
