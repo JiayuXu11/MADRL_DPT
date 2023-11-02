@@ -88,22 +88,6 @@ class uniform(object):
     def __getitem__(self, key = 0):
         return self.demand_list[key]
     
-SKU = "SKU029"
-agents_idx = ['DC001_SKU029', 'DC002_SKU029', 'DC003_SKU029', 'DC004_SKU029', 'DC005_SKU029', 'DC006_SKU029', 'DC007_SKU029', 'DC008_SKU029', 'DC009_SKU029', 'DC010_SKU029', 'DC011_SKU029', 'DC012_SKU029', 'DC013_SKU029', 'DC014_SKU029', 'DC015_SKU029', 'DC016_SKU029', 'DC017_SKU029', 'DC018_SKU029']
-
-class shanshu(object):
-
-    def __init__(self, length, max_demand = 20, i = 0):
-        """ need to be specified in this self that which warehous_sku does this agent belongs to """
-        ARIMA_path = os.path.join("envs", "ARIMA_results", "ARIMA-" + agents_idx[i] + ".txt")
-        #print(ARIMA_path)
-        model_fit = ARIMAResults.load(ARIMA_path)
-        simulated_np = model_fit.simulate(length)
-        simulated_np_clipped_and_squashed = np.clip(simulated_np, 0, simulated_np.max())*(max_demand/simulated_np.max())
-        self.demand_list = np.round(simulated_np_clipped_and_squashed)
-
-    def __getitem__(self, key = 0):
-        return self.demand_list[key]
 
 class shanshu_arima(object):
 
@@ -120,29 +104,7 @@ class shanshu_arima(object):
     def __getitem__(self, key = 0):
         return self.demand_list[key]
       
-TRAIN_PTH = ["./train_data/shanshu_sampling/0/", "./train_data/shanshu_sampling/1/", "./train_data/shanshu_sampling/2/"]
 
-class shanshu_sampling(object):
-    def __init__(self, agent, length, max_demand = 20):
-        files_0 = os.listdir(TRAIN_PTH[0])
-        n_eval = len(files_0)
-        i=randint(0,n_eval-1)
-        self.demand_list = []
-        files=os.listdir(TRAIN_PTH[agent])
-        with open(TRAIN_PTH[agent] + files[i],'rb') as f:
-                d=f.read()
-                encoding = chardet.detect(d)['encoding']
-        with open(TRAIN_PTH[agent] + files[i],  encoding=encoding) as f:
-            lines = f.readlines()
-            for line in lines:
-                self.demand_list.append(int(line))
-            
-
-        for i in range(len(self.demand_list)):
-            self.demand_list[i] = min(max_demand, self.demand_list[i])  
-
-    def __getitem__(self, key = 0):
-        return self.demand_list[key]
     
 class random_fragment(object):
     def __init__(self, agent, length, train_path,max_demand,start):

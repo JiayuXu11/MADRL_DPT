@@ -1,5 +1,5 @@
 import torch
-# from algorithms.actor_critic import Actor, Critic
+from algorithms.actor_critic import Actor, Critic
 from utils.util import update_linear_schedule
 from utils.util import update_step_schedule
 
@@ -29,10 +29,7 @@ class HAPPO_Policy:
         self.share_obs_space = cent_obs_space
         self.act_space = act_space
 
-        if args.model_new:
-            from algorithms.actor_critic_changed import Actor, Critic
-        else:
-            from algorithms.actor_critic import Actor, Critic
+
         self.actor = Actor(args, self.obs_space, self.act_space, self.device)
 
         ###################################### Please Note#########################################

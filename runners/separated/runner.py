@@ -34,7 +34,6 @@ class CRunner(Runner):
             if episode % self.eval_interval == 0 and self.use_eval:
                 re, dict_write = self.eval_para(test_tf=False)
                 dict_write.update({'return': re})
-                # 删除dict_write某些key,原dict_write不变
                 dict_write_tb = dict_write.copy()
                 dict_write_tb.pop('transship_pos_fill_rate')
                 dict_write_tb.pop('transship_neg_fill_rate')
@@ -120,7 +119,7 @@ class CRunner(Runner):
                 inv, demand, orders = self.envs.get_property()
 
                 import copy
-                inv_log.append(copy.deepcopy(inv))   # 不知道为什么这个会变，就给他用copy锁了
+                inv_log.append(copy.deepcopy(inv))   
                 demand_log.append(demand)
                 actions_log.append(copy.deepcopy(orders))
 
@@ -223,8 +222,6 @@ class CRunner(Runner):
                 list(obs_critic[:, agent_id]))
             self.buffer[agent_id].obs[0] = policy_observation_space
             self.buffer[agent_id].available_actions[0] = None
-            # self.buffer[agent_id].rnn_states = np.zeros_like(self.buffer[agent_id].rnn_states)
-            # self.buffer[agent_id].rnn_states_critic = np.zeros_like(self.buffer[agent_id].rnn_states_critic)
 
     @torch.no_grad()
     def collect(self, step):
@@ -249,32 +246,11 @@ class CRunner(Runner):
                                                             self.buffer[agent_id].cell_states_critic[step],
                                                             self.buffer[agent_id].masks[step],
                                                             self.buffer[agent_id].available_actions[step])
-            # value, action, action_log_prob, rnn_state, rnn_state_critic \
-            #     = self.trainer[agent_id].policy.get_actions(self.buffer[agent_id].share_obs[step],
-            #                                     self.buffer[agent_id].obs[step],
-            #                                     self.buffer[agent_id].rnn_states[step],
-            #                                     self.buffer[agent_id].rnn_states_critic[step],
-            #                                     self.buffer[agent_id].masks[step],
-            #                                     self.buffer[agent_id].available_actions[step],deterministic=True)
 
             value_collector.append(_t2n(value))
             action_collector.append(_t2n(action))
 
-            # if self.envs.action_space[agent_id].__class__.__name__ == 'MultiDiscrete':
-            #     for i in range(self.envs.action_space[agent_id].shape):
-            #         uc_action_env = np.eye(self.envs.action_space[agent_id].high[i] + 1)[action[:, i].cpu().detach()]
-            #         if i == 0:
-            #             action_env = uc_action_env
-            #         else:
-            #             action_env = np.concatenate((action_env, uc_action_env), axis=1)
-            # elif self.envs.action_space[agent_id].__class__.__name__ == 'Discrete':
-            #     action_env = np.squeeze(np.eye(self.envs.action_space[agent_id].n)[action.cpu().detach()], 1)
-            # elif self.envs.action_space[agent_id].__class__.__name__ == 'Box':
-            #     action_env = np.array(action.cpu().detach())
-            # else:
-            #     raise NotImplementedError
 
-            # temp_actions_env.append(action_env)
 
             action_log_prob_collector.append(_t2n(action_log_prob))
             rnn_state_collector.append(_t2n(rnn_state))
@@ -282,16 +258,6 @@ class CRunner(Runner):
             cell_state_collector.append(_t2n(cell_state))
             cell_state_critic_collector.append(_t2n(cell_state_critic))
 
-        # [self.envs, agents, dim]
-        # actions_env = []
-        # for i in range(self.n_rollout_threads):
-        #     one_hot_action_env = []
-        #     for temp_action_env in temp_actions_env:
-        #         one_hot_action_env.append(temp_action_env[i])
-        #         if self.all_args.central_controller:
-        #             one_hot_action_env = temp_action_env[i].reshape(self.all_args.num_involver,-1)
-        #             # print(np.where(one_hot_action_env >= 1))
-        #     actions_env.append(one_hot_action_env)
 
         values = np.array(value_collector).transpose(1, 0, 2)
         actions = np.array(action_collector).transpose(1, 0, 2)
@@ -359,7 +325,6 @@ class CRunner(Runner):
     @torch.no_grad()
     def eval_para(self, test_tf=False):
 
-        # 把之前的tensorboard数据清除掉，不然会同时显示，啥也看不清
         self.clear_tensorboard(test_tf)
         overall_reward = []
         envs = self.test_envs if test_tf else self.eval_envs
@@ -469,7 +434,6 @@ class CRunner(Runner):
             eval_masks[eval_dones_env == True] = np.zeros(
                 ((eval_dones_env == True).sum(), self.num_agents, 1), dtype=np.float32)
 
-            # 统计不同cost
             for eval_index in range(n_eval_rollout_threads):
                 eval_info = eval_infos[eval_index]
 
@@ -488,7 +452,7 @@ class CRunner(Runner):
                     if eval_step == self.episode_length-1:
                         ordering_times += eval_info[a]['ordering_times']
 
-                # 写入tensorboard
+                # write it into tensorboard
                 if eval_index < 3:
                     for agent_id in range(self.num_involver):
                         self.writter.add_scalars(main_tag='{eval_or_test}_{eval_index}/Execution_{agent_id}'.format(eval_or_test='test' if test_tf else 'eval', eval_index=eval_index, agent_id=agent_id),
@@ -516,8 +480,7 @@ class CRunner(Runner):
                                              global_step=step)
         num_all = n_eval_rollout_threads*self.episode_length*self.num_involver
         all_demand_mean = self.demand_mean_test if test_tf else self.demand_mean_val
-        # pos_fill_rate为transship_amount 除以transship_intend_pos
-        # neg_fill_rate为transship_amount 除以transship_intend_neg
+
         transship_pos_fill_rate = [transship_amount_pos_per_agent[i]/transship_intend_pos_per_agent[i] if transship_intend_pos_per_agent[i] else 0 for i in range(self.num_involver)]
         transship_neg_fill_rate = [transship_amount_neg_per_agent[i]/transship_intend_neg_per_agent[i] if transship_intend_neg_per_agent[i] else 0 for i in range(self.num_involver)]
         transship_fill_rate = [(transship_amount_pos_per_agent[i]+transship_amount_neg_per_agent[i])/(transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i]) if transship_intend_neg_per_agent[i]+transship_intend_pos_per_agent[i] else 0  for i in range(self.num_involver)]

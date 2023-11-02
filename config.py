@@ -51,7 +51,7 @@ def get_config():
     parser.add_argument("--n_rollout_threads", type=int,
                         default=50, help="Number of parallel envs for training rollouts")
     parser.add_argument("--n_eval_rollout_threads", type=int,
-                        default=1, help="Number of parallel envs for evaluating rollouts(deprecated,暂时是和验证集大小一致)")
+                        default=1, help="Number of parallel envs for evaluating rollouts(deprecated)")
     parser.add_argument("--n_render_rollout_threads", type=int,
                         default=1, help="Number of parallel envs for rendering rollouts")
     parser.add_argument("--num_env_steps", type=int,
@@ -61,7 +61,7 @@ def get_config():
                         default=2000, help='Number of episodes, which will set steps automatically')
 
     parser.add_argument("--n_warmup_evaluations", type=int,
-                        default=10, help="Number of evaluations for warmup")  # 在n_warmup_evaluations中不会触发no_improvement导致的中断
+                        default=10, help="Number of evaluations for warmup")  
     parser.add_argument("--n_no_improvement_thres", type=int,
                         default=30, help="Threshold number of evaluations with no improvement")
     parser.add_argument("--user_name", type=str,
@@ -178,8 +178,7 @@ def get_config():
                         default=1, help="time duration between contiunous twice models saving.")
     parser.add_argument("--log_interval", type=int,
                         default=20, help="time duration between contiunous twice log printing.")
-    # parser.add_argument("--model_dir", type=str,
-    #                     default=r"C:\Users\Jerry\Desktop\thesis\code\Multi-Agent-Deep-Reinforcement-Learning-on-Multi-Echelon-Inventory-Management-main\results\TransshipNewEnv\Inventory Management\happo\check\run_seed_1\models", help="by default None. set the path to pretrained model.")
+    
     parser.add_argument("--model_dir", type=str,
                         default=None, help="by default None. set the path to pretrained model.")
     # eval parameters
@@ -187,10 +186,9 @@ def get_config():
                         default=True, help="by default, do not start evaluation. If set`, start evaluation alongside with training.")
     parser.add_argument("--eval_interval", type=int,
                         default=5, help="time duration between contiunous twice evaluation progress.")
-    # parser.add_argument("--eval_episodes", type=int,
-    #                    default=32, help="number of episodes of a single evaluation.")
 
-    # render parameters 这一部分好像没啥用，因为render是gym里显示图像的，这里面不是用gym的环境
+
+    # render parameters
     parser.add_argument("--save_gifs", type=t_or_f,
                         default=False, help="by default, do not save render video. If set, save video.")
     parser.add_argument("--use_render", type=t_or_f,
@@ -212,121 +210,101 @@ def get_config():
                         default=None, help="continue clip setting")
 
     parser.add_argument("--instant_info_sharing", type=t_or_f,
-                        default=False, help="是否采用即时信息共享机制")
+                        default=False, help="info-sharing without dimension reduction")
 
     parser.add_argument("--adjusted_info_sharing", type=t_or_f,
-                        default=False, help="是否采用降维后的信息共享机制")
+                        default=False, help="info-sharing with dimension reduction")
 
     parser.add_argument("--central_controller", type=t_or_f,
-                        default=False, help="是否全部采用中央控制")
+                        default=False, help="whether use a central network to control all agents")
 
-   #  parser.add_argument("--yaml_path", type=str,
-   #                      default='setting_yaml/discrete/0425_error.yaml', help="yaml的路径")
     parser.add_argument("--yaml_path", type=str,
-                        default=None, help="yaml的路径")
+                        default=None, help="the path of .yaml")
 
     parser.add_argument("--sample_mean_advantage", type=t_or_f,
-                        default=True, help="是否对advantage采用sample_mean_advantage")
+                        default=True, help="whether to use sample_mean_advantage")
 
     parser.add_argument("--num_involver", type=int,
-                        default=3, help="表示有多少个零售商")
+                        default=3, help="num of retailers/involvers")
 
     parser.add_argument("--critic_learning_pure_returns", type=t_or_f,
-                        default=False, help="若为True,则critic network学习没有被处理过的returns,而非经gae或其他方式处理过的return")
+                        default=False, help="About critic loss, true for pure returns, and false for GAE version's returns")
     parser.add_argument("--advantage_pure_returns", type=t_or_f,
-                        default=False, help="若为True,则advantage使用没有被处理过的returns,而非经gae或其他方式处理过的return")
+                        default=False, help="About calculation of advantage, true for simple advantage, False for GAE version's advantage")
 
     parser.add_argument("--alpha", type=float,
-                        default=0.7, help="自私程度")
+                        default=0.7, help="self-interest rate")
 
     parser.add_argument("--ratio_transship", type=t_or_f,
-                        default=False, help="transship是否采用ratio的分配机制")
+                        default=False, help="reallocate the revenue based on the ratio of transshipments")
 
     parser.add_argument("--discrete", type=t_or_f,
-                        default=True, help="是否discrete(deprecated)")
+                        default=True, help="discrete(deprecated)")
     parser.add_argument("--multi_discrete", type=t_or_f,
-                        default=False, help="是否multi_discrete(deprecated)")
+                        default=False, help="multi_discrete(deprecated)")
 
     parser.add_argument("--beta", type=t_or_f,
-                        default=False, help="连续情况是否采用beta分布(deprecated)")
+                        default=False, help="beta distribution in continuous setting(deprecated)")
 
     parser.add_argument("--norm_input", type=t_or_f,
-                        default=True, help="是否将输入先映射到-1,1")
+                        default=True, help="whether to map the input to the range -1 to 1 before entering the network")
 
-    parser.add_argument("--entropy_decrease", type=t_or_f,
-                        default=True, help="是否递进减少entropy需求")
-    parser.add_argument("--entropy_decrease_time", type=int,
-                        default=5, help="递进减少entropy多少次(deprecated)")
-    parser.add_argument("--entropy_decrease_list", type=float,
-                        default=[0.5, 0.1, 0.01, 0], help="递进选择的entropy_coef")
-
-    parser.add_argument("--model_new", type=t_or_f,
-                        default=False, help="是否用新的model")
 
     parser.add_argument("--action_type", type=str,
-                        default='discrete', choices=['discrete', 'multi_discrete', 'continue', 'central_multi_discrete', 'central_discrete'], help="actor网络输出格式")
+                        default='discrete', choices=['discrete', 'multi_discrete', 'continue', 'central_multi_discrete', 'central_discrete'], help="the output of actor network")
     parser.add_argument("--obs_transship", type=str,
-                        default='all_transship', choices=['no_transship', 'self_transship', 'all_transship'], help="transship信息是否作为actor网络的输入")
+                        default='no_transship', choices=['no_transship', 'self_transship', 'all_transship'], help="Whether to include the 'transship' information as input to the actor network.")
     parser.add_argument("--actor_obs_step", type=t_or_f,
-                        default=False, help="step信息是否作为actor网络的输入")
+                        default=False, help="Whether to include the 'step' information as input to the actor network.")
+    parser.add_argument("--critic_obs_step", type=t_or_f,
+                        default=False, help="Whether to include the 'step' information as input to the actor network.")
 
     parser.add_argument("--train_episode_length", type=int,
-                        default=195, help="用于训练的episode长度(针对actor_obs_step为False而设计),不用管，会自动调节的")
+                        default=195, help="deprecated")
 
     parser.add_argument("--if_transship", type=t_or_f,
                         default=True, help="Whether allow transshipments within the system.")
     parser.add_argument("--transship_revenue_method", type=str,
-                        default='constant', choices=['constant', 'ratio', 'market_ratio'], help="transship机制创造收益的分配模式")
+                        default='constant', choices=['constant', 'ratio', 'market_ratio'], help="revenue allocation rule for transshipment")
     parser.add_argument("--constant_transship_revenue", type=float,
-                        default=0.1, help="每transship一单位,可收获的收益")
+                        default=0.1, help="The profit earned per unit for each transshipment.(constant)")
     parser.add_argument("--ratio_transship_revenue", type=float,
-                        default=0.7, help="transship接收方获得transship创造价值的比例")
+                        default=0.7, help="The proportion of value created by the transshipment that is received by the receiving party.(ratio)")
 
     parser.add_argument("--lead_time", type=int,
-                        default=4, help="订货到达时间")
+                        default=4, help="lead time")
     parser.add_argument("--reward_type", type=str,
-                        default='norm_cost', choices=['cost', 'reward', 'norm_cost'], help="reward 是什么")
+                        default='norm_cost', choices=['cost', 'reward', 'norm_cost'], help="the objective function of the system")
     parser.add_argument("--reward_norm_multiplier", type=float,
-                        default=2.4, help="使reward均值为0而添加在当期demand上的系数")
-   #  parser.add_argument("--demand_mean_val", type=float,
-   #                      default=9.478111111111112, help="验证集需求的平均数")
-
-    # parser.add_argument("--generator_method", type=str,
-    #                     default="merton", choices=['merton', 'uniform', 'poisson', 'normal', 'shanshu'], help="数据生成的方法")
+                        default=2.4, help="the norm coefficient of the reward function.(norm_cost)")
     parser.add_argument("--eval_dir", type=str,
-                        default="./eval_data/merton", help="验证集目录(./xx/xx的格式)")
+                        default="./eval_data/merton", help="evaluation dataset")
     parser.add_argument("--test_dir", type=str,
-                        default="./test_data/merton", help="测试集目录(./xx/xx的格式)")
+                        default="./test_data/merton", help="test dataset")
     parser.add_argument("--generator_method", type=str, 
-                        default="shanshu_arima",choices=['merton','uniform','poisson','normal','shanshu','shanshu_arima','shanshu_sampling','random_fragment','align_random_fragment','random_resample'], help="数据生成的方法")
-    # parser.add_argument("--eval_dir", type=str, 
-    #                     default="./eval_data/SKU029", help="验证集目录(./xx/xx的格式)")
-    # parser.add_argument("--test_dir", type=str, 
-    #                     default="./test_data/SKU029", help="测试集目录(./xx/xx的格式)")
+                        default="merton",choices=['merton','uniform','poisson','normal','shanshu_arima','random_fragment','random_resample'], help="training data generator method")
     parser.add_argument("--train_dir", type=str, 
-                        default="./train_data/SKU029", help="训练集目录(./xx/xx的格式)")
+                        default="./train_data/SKU006", help="The source of data for the generator.")
     parser.add_argument("--SKU_id", type=str, 
                         default=None, help="index of tested SKU")
 
     parser.add_argument("--demand_info_for_critic", type=str,
-                        default=['quantile', 'LT_all'], choices=['quantile', 'LT_all'], help="给critic network披露的未来需求信息")
+                        default=['quantile', 'LT_all'], choices=['quantile', 'LT_all'], help="incorporate with exogeneous demand information")
 
     parser.add_argument("--setting_time_end", type=t_or_f,
-                        default=True, help="当时间超过episode_length时,之后的收益是否不考虑")
+                        default=False, help="whether the return considered is finite sum of rewards in T")
 
     parser.add_argument("--homo_distance", type=t_or_f,
-                        default=False, help="是否认为零售商间距离一致")
+                        default=False, help="whether the distances between retailers are consistent")
 
     parser.add_argument("--mini_pooling", type=t_or_f,
-                        default={"flag": False, "threshold": 200, "how": "even"}, help="设置mini_pooling机制, how: even or ratio")
+                        default={"flag": False, "threshold": 200, "how": "even"}, help="hierarchical pooling, how: even or ratio")
  
     parser.add_argument("--pay_first", type=t_or_f,
-                        default=False, help="若为True, 则订货时付钱, False则到货到了再付钱")
+                        default=False, help="If True, payment is made when placing the order; if False, payment is made upon delivery.")
 
     parser.add_argument("--cat_self", type=t_or_f,
-                        default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
-    parser.add_argument("--cat_self_critic", type=t_or_f,
-                        default=False, help="若为True, 则把feature_normalization前后的向量concat在一起")
+                        default=False, help="If True, concatenate the vectors before and after feature normalization together.")
 
     parser.add_argument("--H", type=float,
                         default=0.2, help="holding cost per unit")
@@ -347,27 +325,24 @@ def get_config():
                         default=0.0005, help="shipping_cost_per_distance")
 
     parser.add_argument("--distance_index", type=int,
-                        default=0, choices=[0, 1, 2, 3], help="用哪一个distance矩阵,0表示homo_distance")
+                        default=0, choices=[0, 1, 2, 3], help="the distance matrix used in the environment")
 
     parser.add_argument("--reset_episode", type=int,
-                        default=99999, help="训练指定次数后，重置所有网络的weight")
+                        default=99999, help="After training for a specified number of iterations, reset the weights of all networks.")
 
     parser.add_argument("--ignore_after", type=t_or_f,
-                        default=False, help="T之外的收益用return均值表示")
+                        default=False, help="The return outside of T is represented by the mean return.")
 
     parser.add_argument("--demand_for_action_dim", type=list, 
-                    default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
-    # 只在shanshu_arima里用
+                    default=None,help="Set the action dimension based on the given list. eg. [10,15,20] ")
+
     parser.add_argument("--demand_max_for_clip", type=list, 
-                    default=None,help="跟据该list设定action dim。eg. [10,15,20] ")
+                    default=None,help="Set the upper limit for generating demand based on the given list. eg. [100,150,200] ")
     
     parser.add_argument("--use_factor", type=t_or_f, 
-                        default=True,help="用不用sequential factor")
-    
-    parser.add_argument("--critic_obs_step", type=t_or_f,
-                        default=False, help="step信息是否作为critic网络的输入")
+                        default=True,help="Happo/Mappo")
     
     parser.add_argument("--rnn_name", type=str,
-                        default="GRU", choices=["GRU","LSTM","RNN"], help="rnn用的哪个layer")
+                        default="GRU", choices=["GRU","LSTM","RNN"], help="RNN layer")
 
     return parser

@@ -6,24 +6,22 @@ import numpy as np
 from pathlib import Path
 import torch
 from config import get_config
-from envs.env_wrappers_action_dim_selected import SubprocVecEnv, DummyVecEnv, EvalVecEnv
+from envs.env_wrappers import SubprocVecEnv, DummyVecEnv, EvalVecEnv
 from runners.separated.runner import CRunner as Runner
 import yaml
 import random
 
 
 def seed_torch(seed=0):
-    random.seed(seed)   # Python的随机性
-    # 设置Python哈希种子，为了禁止hash随机化，使得实验可复现
+    random.seed(seed)   
     os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)   # numpy的随机性
-    torch.manual_seed(seed)   # torch的CPU随机性，为CPU设置随机种子
-    torch.cuda.manual_seed(seed)   # torch的GPU随机性，为当前GPU设置随机种子
-    # if you are using multi-GPU.   torch的GPU随机性，为所有GPU设置随机种子
+    np.random.seed(seed)   
+    torch.manual_seed(seed)   
+    torch.cuda.manual_seed(seed)  
     torch.cuda.manual_seed_all(seed)
     # if benchmark=True, deterministic will be False
     torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True   # 选择确定性算法
+    torch.backends.cudnn.deterministic = True   
 
 
 seed_torch()
@@ -31,9 +29,6 @@ seed_torch()
 
 def make_train_env(all_args):
     return SubprocVecEnv(all_args)
-
-# def make_eval_env(all_args,):
-#     return DummyVecEnv(all_args)
 
 
 def make_eval_env(all_args, eval_tf=True):
@@ -47,7 +42,6 @@ def parse_args(args, parser):
 
 if __name__ == "__main__":
 
-    # 判断是否有cuda，没有就报错
     if not torch.cuda.is_available():
         print("no cuda available")
         sys.exit(1)
@@ -57,8 +51,6 @@ if __name__ == "__main__":
     
     all_args = parse_args(sys.argv[1:], parser)
 
-    # 这个后面记得删掉
-    # all_args.yaml_path = 'setting_yaml/multi_discrete/test_adjusted_info.yaml'
 
     if all_args.yaml_path:
         with open(all_args.yaml_path, 'r') as f:
@@ -67,11 +59,12 @@ if __name__ == "__main__":
     all_args = parse_args(sys.argv[1:], parser)
     print(all_args.seed)
 
+    # initialization setting of SKU
     demand_mean = np.load('envs/demand_mean.npy',allow_pickle=True).item()
     demand_max = np.load('envs/demand_max.npy',allow_pickle=True).item()
-    skus = ['SKU006', 'SKU019', 'SKU022', 'SKU023', 'SKU025', 'SKU029', 'SKU032',
+    skus = ['SKU006', 'SKU019', 'SKU022', 'SKU029', 'SKU032',
         'SKU045', 'SKU046', 'SKU062']
-    scales = [7, 53, 142, 237, 22, 25, 6, 98, 46, 20]
+    scales = [7, 53, 142, 25, 6, 98, 46, 20]
     scale_dict = dict(zip(skus, scales))
     if all_args.SKU_id:
         all_args.test_dir = './test_data/{}'.format(all_args.SKU_id) 
@@ -80,55 +73,17 @@ if __name__ == "__main__":
         all_args.demand_for_action_dim = demand_mean[str(all_args.SKU_id)]
         all_args.demand_max_for_clip = demand_max[str(all_args.SKU_id)]
         all_args.FIXED_COST_scale = scale_dict[str(all_args.SKU_id)] if all_args.use_scale else 1
-        all_args.FIXED_COST /= all_args.FIXED_COST_scale
+        all_args.FIXED_COST = all_args.FIXED_COST_scale
 
-    # all_args.model_dir = 'setting_yaml/error_model/models_07'
-
-    # all_args.num_agents = 3
-    # all_args.demand_for_action_dim = [50,20,30]
-
-    # 最后leadtime天的行动不参与训练
+    # actions within the last leadtime days are not included in the training
     all_args.train_episode_length = all_args.episode_length-all_args.lead_time-1
-    # 无限天就每天都参与训练
+    # If the value function represents infinite future returns, then training is conducted every day
     if (not all_args.setting_time_end) and (not all_args.ignore_after):
         all_args.train_episode_length = all_args.episode_length
-    # 自动调num_steps
+
     all_args.num_env_steps = all_args.num_episodes * \
         all_args.episode_length * all_args.n_rollout_threads
 
-    # all_args.homo_distance = True
-    # all_args.use_step_lr_decay = True
-    # all_args.if_transship = False
-    # all_args.lead_time = 4
-    # all_args.mini_pooling["flag"] = False
-    # all_args.test_dir = './test_data/merton'
-    # all_args.reward_type='reward'
-    # all_args.reset_episode=1
-    # all_args.n_no_improvement_thres = 100
-    # all_args.banana=1
-    # all_args.experiment_name='thres_50'
-    # all_args.experiment_name='thres_50_banana_1'
-    # all_args.log_interval = 1
-    # all_args.cat_self=True
-    # all_args.hidden_size = [64,128,256,256]
-    # all_args.use_centralized_V=False
-    # all_args.demand_info_for_critic=['quantile','LT_all','LT_mean']
-    # all_args.action_type = 'multi_discrete'
-    # all_args.pay_first= False
-    # all_args.generator_method='shanshu'
-    # all_args.num_agents = 5
-    # all_args.homo_distance=True
-    # all_args.algorithm_name = 'tsS_r'
-    # all_args.norm_input = False
-    # all_args.action_type='continue'
-
-    # all_args.actor_obs_step = False
-
-    # all_args.compute_pure_returns=True
-    # all_args.instant_info_sharing=True
-
-    # all_args.action_type='discrete'
-    # all_args.central_controller =True
 
     seeds = all_args.seed
 
@@ -152,8 +107,6 @@ if __name__ == "__main__":
         print("-------------------------------------------------Training starts for seed: " +
               str(seed) + "---------------------------------------------------")
 
-        # run_dir = Path(os.path.split(os.path.dirname(os.path.abspath(__file__)))[
-        #                 0] + "/results") / all_args.env_name / all_args.scenario_name / all_args.algorithm_name / all_args.experiment_name
         run_dir = Path("results") / all_args.env_name / all_args.scenario_name / \
             all_args.algorithm_name / all_args.experiment_name
         if not run_dir.exists():
@@ -170,21 +123,14 @@ if __name__ == "__main__":
         if not os.path.exists(seed_res_record_file):
             open(seed_res_record_file, 'a+')
 
-        # seed
-        # torch.manual_seed(seed)
-        # torch.cuda.manual_seed_all(seed)
-        # np.random.seed(seed)
-        # random.seed(seed)
         seed_torch(seed)
-        # 手动调节波动
-        # all_args.std_y_coef=[j/2**4 for j in all_args.std_y_coef]
-        # all_args.lr=all_args.lr/2**4
+
         all_args.clip_bound = [(1-all_args.clip_param),
                                (1+all_args.clip_param)]
 
         num_agents = all_args.num_agents
 
-        # 使得num_involver（门店数量）与num_agents（训练agent数量）匹配
+        # Match the number of stores (num_involver) with the number of training agents (num_agents)
         all_args.num_involver = max(num_agents, all_args.num_involver)
         num_agents = max(num_agents, all_args.num_involver)
 
@@ -193,48 +139,44 @@ if __name__ == "__main__":
             all_args.instant_info_sharing = True
             all_args.action_type = 'central_multi_discrete' if 'multi' in all_args.action_type else 'central_discrete'
             all_args.alpha = 0
-        for coef in all_args.entropy_decrease_list:
-            if all_args.entropy_decrease:
-                all_args.entropy_coef = coef
-            # env
-            envs = make_train_env(all_args)
-            eval_envs = make_eval_env(all_args, eval_tf=True)
-            test_envs = make_eval_env(all_args, eval_tf=False)
 
-            config = {
-                "all_args": all_args,
-                "envs": envs,
-                "eval_envs": eval_envs,
-                "test_envs": test_envs,
-                "num_agents": num_agents,
-                "device": device,
-                "run_dir": run_dir
-            }
+        # env
+        envs = make_train_env(all_args)
+        eval_envs = make_eval_env(all_args, eval_tf=True)
+        test_envs = make_eval_env(all_args, eval_tf=False)
 
-            # run experiments
-            runner = Runner(config)
+        config = {
+            "all_args": all_args,
+            "envs": envs,
+            "eval_envs": eval_envs,
+            "test_envs": test_envs,
+            "num_agents": num_agents,
+            "device": device,
+            "run_dir": run_dir
+        }
 
-            eval_reward, eval_dict, test_reward, test_dict = runner.run()
+        # run experiments
+        runner = Runner(config)
 
-            with open(seed_res_record_file, 'a+') as f:
-                f.write(str(seed) + 'eval_cost' + str(eval_reward) +
-                        'test_cost' + str(test_reward))
-                f.write('\n')
-                f.write('eval_cost_composition' + str(eval_dict))
-                f.write('\n')
-                f.write('test_cost_composition' + str(test_dict))
-                f.write('\n')
-                f.write('\n')
-                f.write('all_args'+str(all_args))
-                f.write('\n')
+        eval_reward, eval_dict, test_reward, test_dict = runner.run()
 
-            if not all_args.entropy_decrease:
-                break
-            if all_args.action_type == 'continue':
-                all_args.std_y_coef = [j/2. for j in all_args.std_y_coef]
-                all_args.lr = all_args.lr/2
+        with open(seed_res_record_file, 'a+') as f:
+            f.write(str(seed) + 'eval_cost' + str(eval_reward) +
+                    'test_cost' + str(test_reward))
+            f.write('\n')
+            f.write('eval_cost_composition' + str(eval_dict))
+            f.write('\n')
+            f.write('test_cost_composition' + str(test_dict))
+            f.write('\n')
+            f.write('\n')
+            f.write('all_args'+str(all_args))
+            f.write('\n')
 
-            all_args.model_dir = str(config['run_dir'] / 'models')
+        if all_args.action_type == 'continue':
+            all_args.std_y_coef = [j/2. for j in all_args.std_y_coef]
+            all_args.lr = all_args.lr/2
+
+        all_args.model_dir = str(config['run_dir'] / 'models')
 
         # post process
         envs.close()

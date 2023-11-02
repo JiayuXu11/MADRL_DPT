@@ -10,26 +10,6 @@ DISTANCE = [np.loadtxt('envs/distance/distance_matrix_0.txt', delimiter=',').ast
             np.loadtxt('envs/distance/distance_matrix_2.txt', delimiter=',').astype(int),
             np.loadtxt('envs/distance/distance_matrix_3.txt', delimiter=',').astype(int),]
 
-demand_mean = {'SKU006': [16, 46, 8, 13, 22, 57, 14, 17, 5, 42, 14, 15, 18, 16, 37, 19, 25, 19],
-               'SKU019': [24, 55, 12, 37, 28, 34, 9, 9, 4, 22, 8, 9, 13, 8, 20, 7, 17, 13],
-               'SKU022': [11, 52, 9, 21, 22, 25, 3, 3, 1, 8, 2, 3, 3, 2, 8, 2, 10, 6],
-               'SKU023': [17, 52, 9, 23, 24, 29, 6, 6, 3, 19, 8, 8, 14, 7, 20, 8, 15, 10],
-               'SKU025': [30, 61, 13, 25, 27, 44, 4, 2, 0, 24, 8, 2, 6, 4, 22, 6, 13, 5],
-               'SKU029': [47, 74, 44, 28, 60, 53, 16, 8, 2, 44, 10, 14, 8, 12, 24, 16, 15, 7],
-               'SKU032': [26, 44, 8, 30, 22, 28, 6, 7, 3, 24, 10, 2, 18, 7, 31, 9, 19, 8],
-               'SKU045': [19, 60, 29, 18, 26, 45, 14, 5, 3, 22, 5, 10, 6, 5, 23, 9, 15, 12],
-               'SKU046': [37, 64, 24, 31, 42, 50, 14, 6, 3, 23, 9, 8, 7, 6, 25, 12, 23, 10],
-               'SKU062': [35, 62, 19, 27, 45, 50, 10, 4, 2, 26, 10, 7, 8, 6, 26, 11, 17, 8]}
-demand_max = {'SKU006': [64, 170, 32, 49, 75, 199, 60, 71, 19, 162, 60, 62, 75, 62, 150, 75, 101, 87],
-               'SKU019': [89, 198, 49, 132, 107, 126, 36, 37, 18, 85, 32, 37, 49, 34, 81, 29, 71, 51],
-               'SKU022': [45, 199, 37, 82, 85, 91, 14, 11, 5, 32, 9, 12, 11, 7, 31, 10, 40, 23],
-               'SKU023': [65, 200, 37, 88, 90, 112, 23, 22, 12, 77, 32, 34, 54, 29, 83, 33, 61, 39],
-               'SKU025': [85, 198, 35, 86, 70, 143, 18, 7, 1, 90, 31, 8, 26, 18, 85, 23, 49, 21],
-               'SKU029': [129, 200, 104, 82, 154, 141, 61, 32, 7, 174, 40, 57, 31, 47, 92, 61, 51, 28],
-               'SKU032': [104, 173, 35, 118, 89, 110, 22, 30, 11, 96, 42, 8, 69, 28, 120, 34, 77, 32],
-               'SKU045': [56, 199, 83, 58, 72, 141, 46, 19, 12, 82, 21, 40, 24, 20, 88, 35, 56, 46],
-               'SKU046': [96, 198, 59, 100, 109, 153, 59, 26, 12, 91, 35, 34, 26, 26, 96, 46, 85, 41],
-               'SKU062': [94, 198, 49, 88, 125, 154, 39, 16, 9, 103, 38, 27, 31, 24, 101, 41, 60, 35]}
 S_I = 10
 S_O = 10
 
@@ -67,14 +47,14 @@ class Env(object):
 
         self.generator_method = args.generator_method
 
-        # 考不考虑distance不同问题
+        # Whether to consider the issue of different distances or not
         self.homo_distance=args.homo_distance
         self.mini_pooling = args.mini_pooling
                 
         # 设置distance
         self.distance = DISTANCE[0 if self.homo_distance else args.distance_index][:self.agent_num,:self.agent_num]
 
-        # 货到付款， 还是先钱后货
+        # Cash on delivery or payment in advance.
         self.pay_first= args.pay_first
 
         # actor_obs
@@ -88,10 +68,7 @@ class Env(object):
         self.use_centralized_V = args.use_centralized_V
         self.obs_critic_dim = self.get_critic_obs_dim(self.use_centralized_V, self.critic_obs_step)
 
-        # 根据这个来调action_dim,如果为空，就还是原来的ACTION_DIM_DICT那种
-        # self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
-        self.demand_for_action_dim = demand_mean[str(self.SKU_id)] if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
-        # ACTION_DIM_DICT = {'discrete':(DEMAND_MAX*2+1)*(DEMAND_MAX+1),'multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1],'continue':2, 'central_multi_discrete':[DEMAND_MAX*3+1,DEMAND_MAX*2+1]*self.agent_num, 'central_discrete':[(DEMAND_MAX*2+1)*(DEMAND_MAX+1)]*self.agent_num}
+        self.demand_for_action_dim = args.demand_for_action_dim if args.demand_for_action_dim else [DEMAND_MAX]*self.agent_num
         self.action_type = args.action_type
 
         if self.action_type == 'discrete':
@@ -107,7 +84,7 @@ class Env(object):
             self.action_dim = [[(self.demand_for_action_dim[i]*2+1)*(self.demand_for_action_dim[i]+1) for i in range(self.agent_num) ]]
         # self.action_dim = ACTION_DIM_DICT[self.action_type]
         
-        # transship顺序
+        # transship order
         self.shipping_order = self.get_shipping_order(self.distance)
         self.shipping_cost_matrix = self.phi(self.distance)
 
@@ -116,7 +93,7 @@ class Env(object):
         self.gamma = args.gamma
 
 
-        # transship收益分配
+        # transship revenue allocation
         self.transship_revenue_method = args.transship_revenue_method
         self.constant_transship_revenue = args.constant_transship_revenue
         self.ratio_transship_revenue = args.ratio_transship_revenue
@@ -174,16 +151,8 @@ class Env(object):
             demand_list = [generator.normal(2*EPISODE_LEN,DEMAND_MAX/2,DEMAND_MAX/4,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
         elif(self.generator_method=='uniform'):
             demand_list = [generator.uniform(2*EPISODE_LEN,DEMAND_MAX).demand_list for _ in range(self.agent_num)]
-        elif(self.generator_method=='shanshu'):
-             demand_list = [generator.shanshu(2*EPISODE_LEN,DEMAND_MAX,i).demand_list for i in range(self.agent_num)]
-            #  demand_list=[generator.shanshu(EPISODE_LEN,DEMAND_MAX,0),generator.shanshu(EPISODE_LEN,DEMAND_MAX,1),generator.shanshu(EPISODE_LEN,DEMAND_MAX,2)]
         elif(self.generator_method=='shanshu_arima'):
              demand_list = [generator.shanshu_arima(self.SKU_id,i,2*EPISODE_LEN,self.demand_max_for_clip).demand_list for i in range(self.agent_num)]
-        elif(self.generator_method=='shanshu_sampling'):
-            demand_list = [generator.shanshu_sampling(i,2*EPISODE_LEN, 1000*DEMAND_MAX).demand_list for i in range(self.agent_num)]
-        elif(self.generator_method=='align_random_fragment'):
-            start = random.randint(0,500)
-            demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,start).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_fragment'):
             demand_list = [generator.random_fragment(i,2*EPISODE_LEN,self.train_path,1000*DEMAND_MAX,random.randint(0,500)).demand_list for i in range(self.agent_num)]
         elif(self.generator_method=='random_resample'):
@@ -210,7 +179,7 @@ class Env(object):
         demand_info_num = (5 if 'quantile' in self.demand_info_for_critic else 0 )+(self.lead_time if 'LT_all' in self.demand_info_for_critic else 0 )+(1 if 'LT_mean' in self.demand_info_for_critic else 0 )
         demand_dim = demand_info_num*self.agent_num if info_sharing else demand_info_num*1
         patial_info_sharing_dim = self.agent_num*2 if not info_sharing else 0
-        # critic的输入不包含当期需求
+        # The input of the critic does not include the current demand
         obs_diff = self.agent_num if info_sharing else 1
         return self.get_obs_dim(info_sharing, False, obs_step) + demand_dim + patial_info_sharing_dim - obs_diff
 
@@ -387,7 +356,7 @@ class Env(object):
             else:
                 for a1,a2 in self.shipping_order:
                     if a1<self.agent_num and a2<self.agent_num:
-                        # 表示一个想要货，一个想出货
+                        # Represents one party requesting goods and another party wanting to sell goods.
                         if transship_amounts[a1]*transship_amounts[a2]<0:
                             tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
                             self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
@@ -395,9 +364,6 @@ class Env(object):
                             transship_amounts[a1]-=self.transship_matrix[a1][a2]
                             transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
-            # # 最后几天订的货，因为leadtime原因也到不了
-            # if not self.actor_obs_step and (self.step_num > EPISODE_LEN-self.lead_time-1):
-            #     order_amounts = [0 for _ in range(self.agent_num)]
             transship_amounts= [sum(self.transship_matrix[i]) for i in range(self.agent_num)]
         else:
             transship_amounts = [0] * self.agent_num
@@ -405,10 +371,9 @@ class Env(object):
 
         return mapped_actions
     
-    # homo distance下的撮合机制 
+    # Matching mechanism under homo distance.
     def transship_merge_homo(self,transship_amounts):
-        # 撮合transship
-        # ## 1. 按比例分配,和下面那个挨个砍一刀一起用才是完整版。效果不好，感觉还不如挨个砍一刀。
+
         if self.ratio_transsship:
             transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
             transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
@@ -420,7 +385,6 @@ class Env(object):
                 ratio = -transship_neg/transship_pos
                 for i in range(len(transship_amounts)):
                     transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]>0 else transship_amounts[i]
-        # 2. 若仍未撮合成功，则挨个砍一刀
         i=0
         while(sum(transship_amounts) != 0):
             if sum(transship_amounts) > 0:
@@ -432,7 +396,7 @@ class Env(object):
             i+=1
             i=0 if i > self.agent_num-1 else i
         
-        # 转换为transship_matrix格式
+        # transship_matrix
         for a1 in range(self.agent_num):
             for a2 in range(self.agent_num):
                 if transship_amounts[a1]*transship_amounts[a2]<0:
@@ -442,9 +406,8 @@ class Env(object):
                     transship_amounts[a1]-=self.transship_matrix[a1][a2]
                     transship_amounts[a2]-=self.transship_matrix[a2][a1]
 
-    # mini_pooling 撮合机制 
+    # hierarchical mpooling mechanism
     def transship_merge_mp(self, transship_amounts, threshold, how):
-        # 撮合transship
         def mini_pooling(distance_matrix, transship_amounts, thres):
             n = len(transship_amounts)
             possible_pairs = []
@@ -488,42 +451,6 @@ class Env(object):
                 
             
             
-            # transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
-            # transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
-        # # 撮合transship
-        # # ## 1. 按比例分配,和下面那个挨个砍一刀一起用才是完整版。效果不好，感觉还不如挨个砍一刀。
-        # if self.ratio_transsship:
-        #     transship_pos=sum([t if t>0 else 0 for t in transship_amounts])
-        #     transship_neg=sum([t if t<0 else 0 for t in transship_amounts])
-        #     if sum(transship_amounts) < 0:
-        #         ratio = -transship_pos/transship_neg
-        #         for i in range(len(transship_amounts)):
-        #             transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]<0 else transship_amounts[i]
-        #     elif sum(transship_amounts) > 0:
-        #         ratio = -transship_neg/transship_pos
-        #         for i in range(len(transship_amounts)):
-        #             transship_amounts[i]= round(ratio*transship_amounts[i],0) if transship_amounts[i]>0 else transship_amounts[i]
-        # # 2. 若仍未撮合成功，则挨个砍一刀
-        # i=0
-        # while(sum(transship_amounts) != 0):
-        #     if sum(transship_amounts) > 0:
-        #         if (transship_amounts[i] > 0):
-        #             transship_amounts[i] += -1
-        #     elif sum(transship_amounts) < 0:
-        #         if (transship_amounts[i] < 0):
-        #             transship_amounts[i] += 1
-        #     i+=1
-        #     i=0 if i > self.agent_num-1 else i
-        
-        # 转换为transship_matrix格式
-        # for a1 in range(self.agent_num):
-        #     for a2 in range(self.agent_num):
-        #         if transship_amounts[a1]*transship_amounts[a2]<0:
-        #             tran_amount = min(abs(transship_amounts[a1]),abs(transship_amounts[a2]))
-        #             self.transship_matrix[a1][a2]=tran_amount if transship_amounts[a1]>0 else -tran_amount
-        #             self.transship_matrix[a2][a1]=-self.transship_matrix[a1][a2]
-        #             transship_amounts[a1]-=self.transship_matrix[a1][a2]
-        #             transship_amounts[a2]-=self.transship_matrix[a2][a1]
         
     def get_step_obs(self, info_sharing, adjusted_info_sharing, obs_step, demand_today=True):
         """
@@ -577,19 +504,16 @@ class Env(object):
         return sub_agent_obs
     
     def del_and_insert(self, arr, del_num, insert_num):
-    # 二分查找要删除的数字的位置
+        # Binary search for the position of the number to be deleted
         left, right = 0, len(arr) - 1
         while left <= right:
             mid = (left + right) // 2
             if arr[mid] == del_num:
-                # 找到要删除的数字，将其替换为插入的数字
                 arr[mid] = insert_num
-                # 从插入数字的位置开始向前遍历，直到找到一个比当前位置小的数或者到达数组的开头
                 i = mid
                 while i > 0 and arr[i - 1] > insert_num:
                     arr[i], arr[i - 1] = arr[i - 1], arr[i]
                     i -= 1
-                # 从插入数字的位置开始向后遍历，直到找到一个比当前位置大的数或者到达数组的结尾
                 i = mid
                 while i < len(arr) - 1 and arr[i + 1] < insert_num:
                     arr[i], arr[i + 1] = arr[i + 1], arr[i]
@@ -601,7 +525,7 @@ class Env(object):
                 right = mid - 1
         return arr
 
-    # 统计需求quantile，以供critic network使用
+    # Compute the quantile of the demand for use by the critic network
     def set_demand_statistics(self):
         if self.step_num ==0:
             self.demand_dy_sorted = [np.sort(demand[self.step_num+self.lead_time:self.looking_len+self.step_num+self.lead_time]) for demand in self.demand_list] 
@@ -640,7 +564,7 @@ class Env(object):
             for lt_d in self.demand_LT:
                 self.demand_LT_all_helper +=lt_d
 
-    # 假如不transship，lead time时间后，还剩多少库存，平均缺货多少
+    # If no transshipment is made, after the lead time, how much inventory is left and what is the average shortage.
     def get_LT_inv_shortage(self):
 
         self.LT_inv=self.inventory[:]
@@ -655,7 +579,7 @@ class Env(object):
         self.LT_inv_shortage=self.LT_inv+self.LT_avg_shortage
 
 
-    # critic network 专属obs
+    # Critic network exclusive observations.
     def get_step_obs_critic(self, info_sharing, obs_step):
         actor_agent_obs = self.get_step_obs(info_sharing, False, obs_step, False)
 
@@ -670,22 +594,18 @@ class Env(object):
             actor_arr = actor_agent_obs[i]
             if info_sharing :
                 if i==0:
-                    # demand_mean_arr = (self.demand_mean if 'all_mean' in self.demand_info_for_critic else []) + (self.demand_mean_dy if 'mean' in self.demand_info_for_critic else [])
-                    # demand_mean_arr = np.array(demand_mean_arr)
+
                     demand_quantile_arr = (self.demand_q5+self.demand_q25+self.demand_q50+self.demand_q75+self.demand_q95) if 'quantile' in self.demand_info_for_critic else [] 
                     demand_quantile_arr = np.array(demand_quantile_arr)
-                    # demand_std_arr = (self.demand_std if 'all_std' in self.demand_info_for_critic else []) + (self.demand_std_dy if 'std' in self.demand_info_for_critic else [])
-                    # demand_std_arr = np.array(demand_std_arr)
+
                     demand_LT_arr = (self.demand_LT_all_helper if 'LT_all' in self.demand_info_for_critic else []) + (self.demand_LT_mean if 'LT_mean' in self.demand_info_for_critic else [])
                     demand_LT_arr = np.array(demand_LT_arr)
                     other_actor_arr = np.array([])
             else:
-                # demand_mean_arr = ([self.demand_mean[i]] if 'all_mean' in self.demand_info_for_critic else []) + ([self.demand_mean_dy[i]] if 'mean' in self.demand_info_for_critic else [])
-                # demand_mean_arr = np.array(demand_mean_arr)
+
                 demand_quantile_arr = [self.demand_q5[i],self.demand_q25[i],self.demand_q50[i],self.demand_q75[i],self.demand_q95[i]] if 'quantile' in self.demand_info_for_critic else [] 
                 demand_quantile_arr = np.array(demand_quantile_arr)
-                # demand_std_arr = ([self.demand_std[i]] if 'all_std' in self.demand_info_for_critic else []) + ([self.demand_std_dy[i]] if 'std' in self.demand_info_for_critic else [])
-                # demand_std_arr = np.array(demand_std_arr)
+
                 demand_LT_arr = (self.demand_LT[i] if 'LT_all' in self.demand_info_for_critic else []) + ([self.demand_LT_mean[i]] if 'LT_mean' in self.demand_info_for_critic else [])
                 demand_LT_arr = np.array(demand_LT_arr)
                 other_actor_arr = self.LT_inv_shortage
@@ -693,10 +613,8 @@ class Env(object):
 
 
             if(self.normalize):
-                # arr = np.concatenate([actor_arr,demand_mean_arr*2/DEMAND_MAX-1., demand_std_arr/DEMAND_MAX-1., demand_quantile_arr*2/DEMAND_MAX-1, demand_LT_arr*2/DEMAND_MAX-1, other_actor_arr*2/DEMAND_MAX-1])
                 arr = np.concatenate([actor_arr, demand_quantile_arr*2/self.demand_for_action_dim[i]-1, demand_LT_arr*2/self.demand_for_action_dim[i]-1, other_actor_arr*2/self.demand_for_action_dim[i]-1])
             else:
-                # arr = np.concatenate([actor_arr,demand_mean_arr, demand_std_arr, demand_quantile_arr, demand_LT_arr])
                 arr = np.concatenate([actor_arr, demand_quantile_arr, demand_LT_arr,other_actor_arr])
             sub_agent_obs.append(arr)
 
@@ -713,17 +631,12 @@ class Env(object):
             - processed_rewards: list, a list for rewards of all actors
         """
         processed_rewards = []
-        # if(self.train):
-        #     processed_rewards = [[self.alpha*i + (1-self.alpha)*np.mean(reward)] for i in reward]
-        # else:
-        #     processed_rewards = [[i] for i in reward]
+
         processed_rewards = [[self.alpha*i + (1-self.alpha)*np.mean(reward)] for i in reward]
         self.reward=[self.alpha*i + (1-self.alpha)*np.mean(reward) for i in reward]
         self.reward_cum=[self.reward_cum[i]+self.reward[i] for i in range(self.agent_num)]
         return processed_rewards
     
-    
-    # transship的收益
     def get_transship_revenue(self,action):
         cur_demand = [self.demand_list[i][self.step_num] for i in range(self.agent_num)]
         transship_revenue=[0 for i in range(self.agent_num)]
@@ -739,11 +652,10 @@ class Env(object):
             transship_revenue[i] = max((-self.C+self.P)*min(shortage_wihout_transship,ts) - self.S*ts - self.H*max(ts-shortage_wihout_transship,0),0)   
         return transship_revenue , transship_volume      
     
-    # 考虑了transship供需关系，及带来的未来收益的分配模式
     def state_update_transship_revenue_sharing(self, action):
         """
         - Need to be implemented
-        - Update system state and record some states that you may need in other fuctions like get_eval_bw_res, get_orders, etc.
+        - Update system state and record some states
         - Inputs:
             - action: list, processed actions for each actor
             - Modify the inputs as you need
@@ -756,7 +668,7 @@ class Env(object):
 
         self.step_num+=1
 
-        # 计算transship前后收益
+        # Calculate the profits before and after transshipment.
         for i in range(self.agent_num):
             self.order[i].append(action[i][0])
             self.transship_request[i]=action[i][1]
@@ -768,19 +680,19 @@ class Env(object):
             norm_drift =cur_demand[i]*self.reward_norm_multiplier if 'norm' in self.reward_type else 0 
 
             
-            # 纯运费
+            # pure shipping cost
             self.shipping_cost_pure[i] = sum([self.shipping_cost_matrix[i][j]*self.transship_matrix[i][j] if self.transship_matrix[i][j]>0 else 0 for j in range(self.agent_num)])
-            # 运费+买卖货的费用
+            # Shipping cost + buying/selling cost
             self.shipping_cost_all[i] = self.shipping_cost_pure[i] + self.C*(action[i][1])
 
             self.ordering_cost[i] = (self.C*(action[i][0])+self.FIXED_COST*(1 if action[i][0]>0 else 0)) if self.pay_first else (self.C*(self.order[i][0])+self.FIXED_COST*(1 if self.order[i][0]>0 else 0))
             self.ordering_times[i]+=(1 if action[i][0]>0 else 0) if self.pay_first else (1 if self.order[i][0]>0 else 0)
             self.penalty_cost[i] = -self.P*min(inv_start-cur_demand[i],0)
             self.holding_cost[i] = self.H*max(inv_start-cur_demand[i],0)
-            # transship 后的reward 
+            # reward after transshipment 
             reward= -self.ordering_cost[i]-self.shipping_cost_all[i]-self.holding_cost[i]-self.penalty_cost[i]+revenue_demand+norm_drift
             
-            # transship前的reward
+            # reward before transshipment 
             reward_before= -self.ordering_cost[i]-self.H*max(inv_start_before-cur_demand[i],0)+self.P*min(inv_start_before-cur_demand[i],0)+revenue_demand+norm_drift
             
             self.demand_fulfilled[i] =  min(inv_start,cur_demand[i])
@@ -789,7 +701,7 @@ class Env(object):
             self.action_history[i].append(action[i])
             self.order[i]=self.order[i][1:]
 
-            # 最后一天将仓库内剩余货品按成本价折算
+            # On the last day, convert the remaining inventory in the warehouse to cost price
             if self.step_num > EPISODE_LEN-1 and (not self.train):
                 reward=reward+(self.C)*max(inv_start-cur_demand[i],0)
                 reward_before=reward_before+(self.C)*max(inv_start-cur_demand[i],0)
@@ -797,11 +709,10 @@ class Env(object):
             rewards_before.append(reward_before)
 
         rewards=[]
-        # 把transship收益分了
+        # allocation of transshipment revnue
         for i in range(self.agent_num):
             reward = rewards_after[i]
 
-             # transship 收益分配
             transship_reallocate = 0
             if self.transship_revenue_method == 'constant':
                 transship_reallocate = -self.constant_transship_revenue*self.transship_request[i]

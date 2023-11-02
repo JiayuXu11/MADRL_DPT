@@ -1,2 +1,0 @@
-python train_env.py --yaml_path setting_yaml\continue_beta.yaml 
-@REM python train_env.py --yaml_path setting_yaml\continue_cent_controller.yaml --experiment_name continue_cent_controller_sample_mean --central_controller False

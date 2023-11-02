@@ -1,0 +1,65 @@
+algorithm_name: 'happo' #'happo' #'heuristic2'  #'happo_continue'
+experiment_name: 'SKU006'
+SKU_id: 'SKU006'
+
+# basic setting
+model_dir:  
+n_rollout_threads: 300
+num_env_steps: 3000000000
+num_agents: 3
+num_episodes: 2000
+eval_interval: 10
+n_no_improvement_thres: 60
+gamma: 0.98
+
+# continue or discrete
+action_type: 'multi_discrete'  # ['discrete', 'multi_discrete', 'continue']
+
+# env
+transship_revenue_method: 'constant'
+constant_transship_revenue: 0.5
+
+# lr
+lr: 5e-4
+critic_lr: 1e-3
+
+# model setting
+recurrent_N: 2
+layer_N: 2 #
+hidden_size: 256
+hidden_size_critic: 64 # critic
+use_ReLU: False
+weight_decay: 0
+
+# ppo
+ppo_epoch: 10 #
+use_proper_time_limits: False
+use_gae: True
+gae_lambda: 0.95
+use_clipped_value_loss: True
+clip_param: 0.2
+critic_learning_pure_returns: False
+advantage_pure_returns: False
+
+lead_time: 4
+reward_norm_multiplier: 2.4 #
+reward_type: norm_cost
+
+demand_info_for_critic: ['quantile','LT_all']
+
+pay_first: False
+
+generator_method: 'shanshu_arima'
+eval_dir: "./eval_data/SKU006"
+test_dir: "./test_data/SKU006"
+train_dir: "./train_data/SKU006"
+
+cat_self: False
+use_centralized_V: False #
+
+homo_distance: False
+mini_pooling["flag"]: True
+mini_pooling["how"]: 'ratio'
+distance_index: 1
+
+use_factor: True

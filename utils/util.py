@@ -87,7 +87,6 @@ def tile_images(img_nhwc):
     img_Hh_Ww_c = img_HhWwc.reshape(H*h, W*w, c)
     return img_Hh_Ww_c
 
-# 删除文件夹
 
 
 def del_folder(path):
@@ -103,5 +102,4 @@ def del_folder(path):
             try:
                 os.remove(c_path)
             except Exception as e:
-                # 访问异常的错误编号和详细信息
                 print(repr(e))
