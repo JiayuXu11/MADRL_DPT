@@ -1,0 +1,364 @@
+{
+  "backlog": [
+    {
+      "name": "default",
+      "config": "configs/backlog/default.json"
+    },
+    {
+      "name": "agents12",
+      "config": "configs/backlog/agents12.json"
+    },
+    {
+      "name": "agents15",
+      "config": "configs/backlog/agents15.json"
+    },
+    {
+      "name": "agents2",
+      "config": "configs/backlog/agents2.json"
+    },
+    {
+      "name": "agents20",
+      "config": "configs/backlog/agents20.json"
+    },
+    {
+      "name": "agents30",
+      "config": "configs/backlog/agents30.json"
+    },
+    {
+      "name": "agents50",
+      "config": "configs/backlog/agents50.json"
+    },
+    {
+      "name": "agents6",
+      "config": "configs/backlog/agents6.json"
+    },
+    {
+      "name": "agents9",
+      "config": "configs/backlog/agents9.json"
+    },
+    {
+      "name": "lt3",
+      "config": "configs/backlog/lt3.json"
+    },
+    {
+      "name": "lt4",
+      "config": "configs/backlog/lt4.json"
+    },
+    {
+      "name": "lt5",
+      "config": "configs/backlog/lt5.json"
+    },
+    {
+      "name": "scpu0",
+      "config": "configs/backlog/scpu0.json"
+    },
+    {
+      "name": "scpu01",
+      "config": "configs/backlog/scpu01.json"
+    },
+    {
+      "name": "scpu03",
+      "config": "configs/backlog/scpu03.json"
+    },
+    {
+      "name": "b05",
+      "config": "configs/backlog/b05.json"
+    },
+    {
+      "name": "b15",
+      "config": "configs/backlog/b15.json"
+    },
+    {
+      "name": "b20",
+      "config": "configs/backlog/b20.json"
+    },
+    {
+      "name": "h005",
+      "config": "configs/backlog/h005.json"
+    },
+    {
+      "name": "h015",
+      "config": "configs/backlog/h015.json"
+    },
+    {
+      "name": "h020",
+      "config": "configs/backlog/h020.json"
+    },
+    {
+      "name": "moq0",
+      "config": "configs/backlog/moq0.json"
+    },
+    {
+      "name": "moq40",
+      "config": "configs/backlog/moq40.json"
+    },
+    {
+      "name": "moq60",
+      "config": "configs/backlog/moq60.json"
+    }
+  ],
+  "backlog_additional": [
+    {
+      "name": "default",
+      "config": "configs/backlog_additional/default.json"
+    },
+    {
+      "name": "h02",
+      "config": "configs/backlog_additional/h02.json"
+    },
+    {
+      "name": "h03",
+      "config": "configs/backlog_additional/h03.json"
+    },
+    {
+      "name": "h04",
+      "config": "configs/backlog_additional/h04.json"
+    },
+    {
+      "name": "h05",
+      "config": "configs/backlog_additional/h05.json"
+    },
+    {
+      "name": "b04",
+      "config": "configs/backlog_additional/b04.json"
+    },
+    {
+      "name": "b06",
+      "config": "configs/backlog_additional/b06.json"
+    },
+    {
+      "name": "b08",
+      "config": "configs/backlog_additional/b08.json"
+    },
+    {
+      "name": "scpu0",
+      "config": "configs/backlog_additional/scpu0.json"
+    },
+    {
+      "name": "scpu0001",
+      "config": "configs/backlog_additional/scpu0001.json"
+    },
+    {
+      "name": "scpu00015",
+      "config": "configs/backlog_additional/scpu00015.json"
+    },
+    {
+      "name": "scpu0002",
+      "config": "configs/backlog_additional/scpu0002.json"
+    },
+    {
+      "name": "agents5",
+      "config": "configs/backlog_additional/agents5.json"
+    },
+    {
+      "name": "agents7",
+      "config": "configs/backlog_additional/agents7.json"
+    },
+    {
+      "name": "agents9",
+      "config": "configs/backlog_additional/agents9.json"
+    },
+    {
+      "name": "moq0",
+      "config": "configs/backlog_additional/moq0.json"
+    },
+    {
+      "name": "moq40",
+      "config": "configs/backlog_additional/moq40.json"
+    },
+    {
+      "name": "moq60",
+      "config": "configs/backlog_additional/moq60.json"
+    },
+    {
+      "name": "lt8",
+      "config": "configs/backlog_additional/lt8.json"
+    },
+    {
+      "name": "lt11",
+      "config": "configs/backlog_additional/lt11.json"
+    },
+    {
+      "name": "lt15",
+      "config": "configs/backlog_additional/lt15.json"
+    }
+  ],
+  "lost": [
+    {
+      "name": "default",
+      "config": "configs/lost/default.json"
+    },
+    {
+      "name": "agents12",
+      "config": "configs/lost/agents12.json"
+    },
+    {
+      "name": "agents15",
+      "config": "configs/lost/agents15.json"
+    },
+    {
+      "name": "agents2",
+      "config": "configs/lost/agents2.json"
+    },
+    {
+      "name": "agents20",
+      "config": "configs/lost/agents20.json"
+    },
+    {
+      "name": "agents30",
+      "config": "configs/lost/agents30.json"
+    },
+    {
+      "name": "agents50",
+      "config": "configs/lost/agents50.json"
+    },
+    {
+      "name": "agents6",
+      "config": "configs/lost/agents6.json"
+    },
+    {
+      "name": "agents9",
+      "config": "configs/lost/agents9.json"
+    },
+    {
+      "name": "lt3",
+      "config": "configs/lost/lt3.json"
+    },
+    {
+      "name": "lt4",
+      "config": "configs/lost/lt4.json"
+    },
+    {
+      "name": "lt5",
+      "config": "configs/lost/lt5.json"
+    },
+    {
+      "name": "scpu0",
+      "config": "configs/lost/scpu0.json"
+    },
+    {
+      "name": "scpu01",
+      "config": "configs/lost/scpu01.json"
+    },
+    {
+      "name": "scpu03",
+      "config": "configs/lost/scpu03.json"
+    },
+    {
+      "name": "b05",
+      "config": "configs/lost/b05.json"
+    },
+    {
+      "name": "b15",
+      "config": "configs/lost/b15.json"
+    },
+    {
+      "name": "b20",
+      "config": "configs/lost/b20.json"
+    },
+    {
+      "name": "h005",
+      "config": "configs/lost/h005.json"
+    },
+    {
+      "name": "h015",
+      "config": "configs/lost/h015.json"
+    },
+    {
+      "name": "h020",
+      "config": "configs/lost/h020.json"
+    },
+    {
+      "name": "moq0",
+      "config": "configs/lost/moq0.json"
+    },
+    {
+      "name": "moq40",
+      "config": "configs/lost/moq40.json"
+    },
+    {
+      "name": "moq60",
+      "config": "configs/lost/moq60.json"
+    },
+    {
+      "name": "p4",
+      "config": "configs/lost/p4.json"
+    },
+    {
+      "name": "p6",
+      "config": "configs/lost/p6.json"
+    },
+    {
+      "name": "p7",
+      "config": "configs/lost/p7.json"
+    }
+  ],
+  "beverage": [
+    {
+      "name": "SKU006",
+      "config": "configs/beverage/SKU006.json"
+    },
+    {
+      "name": "SKU019",
+      "config": "configs/beverage/SKU019.json"
+    },
+    {
+      "name": "SKU022",
+      "config": "configs/beverage/SKU022.json"
+    },
+    {
+      "name": "SKU023",
+      "config": "configs/beverage/SKU023.json"
+    },
+    {
+      "name": "SKU029",
+      "config": "configs/beverage/SKU029.json"
+    },
+    {
+      "name": "SKU045",
+      "config": "configs/beverage/SKU045.json"
+    },
+    {
+      "name": "SKU046",
+      "config": "configs/beverage/SKU046.json"
+    },
+    {
+      "name": "SKU062",
+      "config": "configs/beverage/SKU062.json"
+    }
+  ],
+  "ririshun": [
+    {
+      "name": "1936c558",
+      "config": "configs/ririshun/1936c558.json"
+    },
+    {
+      "name": "26f47370",
+      "config": "configs/ririshun/26f47370.json"
+    },
+    {
+      "name": "3b6fda08",
+      "config": "configs/ririshun/3b6fda08.json"
+    },
+    {
+      "name": "3e0092db",
+      "config": "configs/ririshun/3e0092db.json"
+    },
+    {
+      "name": "a4830d20",
+      "config": "configs/ririshun/a4830d20.json"
+    },
+    {
+      "name": "b01ff11b",
+      "config": "configs/ririshun/b01ff11b.json"
+    },
+    {
+      "name": "b0bdce95",
+      "config": "configs/ririshun/b0bdce95.json"
+    },
+    {
+      "name": "bf67f87f",
+      "config": "configs/ririshun/bf67f87f.json"
+    }
+  ]
+}

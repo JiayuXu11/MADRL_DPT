@@ -1,0 +1,243 @@
+{
+  "algo_args": {
+    "algo": {
+      "action_aggregation": "prod",
+      "actor_num_mini_batch": 1,
+      "clip_param": 0.2,
+      "critic_epoch": 15,
+      "critic_num_mini_batch": 1,
+      "entropy_coef": 0.05,
+      "fixed_order": false,
+      "gae_lambda": 0.95,
+      "gamma": 0.95,
+      "huber_delta": 10.0,
+      "max_grad_norm": 10.0,
+      "ppo_epoch": 15,
+      "share_param": true,
+      "use_clipped_value_loss": true,
+      "use_gae": true,
+      "use_huber_loss": true,
+      "use_max_grad_norm": true,
+      "use_policy_active_masks": true,
+      "value_loss_coef": 1,
+      "multi_critic_tf": false,
+      "multi_critic_buffer_tf": true,
+      "use_factor": false,
+      "use_advantage_split": false
+    },
+    "device": {
+      "cuda": true,
+      "cuda_deterministic": true,
+      "torch_threads": 4
+    },
+    "eval": {
+      "eval_episodes": 20,
+      "n_eval_rollout_threads": 20,
+      "use_eval": true,
+      "dataset_for_eval_test_tf": true
+    },
+    "logger": {
+      "log_dir": "./results"
+    },
+    "model": {
+      "activation_func": "tanh",
+      "critic_lr": 0.001,
+      "data_chunk_length": 10,
+      "gain": 0.01,
+      "hidden_sizes": [
+        64
+      ],
+      "initialization_method": "orthogonal_",
+      "lr": 0.0005,
+      "opti_eps": 1e-05,
+      "recurrent_n": 1,
+      "std_x_coef": 1,
+      "std_y_coef": 0.5,
+      "use_feature_normalization": false,
+      "use_naive_recurrent_policy": false,
+      "use_recurrent_policy": true,
+      "weight_decay": 0,
+      "prod_prob_weight": 0.5
+    },
+    "render": {
+      "render_episodes": 10,
+      "use_render": false
+    },
+    "seed": {
+      "seed": 1,
+      "seed_specify": true
+    },
+    "train": {
+      "episode_length": 50,
+      "eval_interval": 50,
+      "log_interval": 5,
+      "model_dir": null,
+      "n_rollout_threads": 50,
+      "num_env_steps": 150000000,
+      "use_linear_lr_decay": false,
+      "use_fragment_lr_decay": true,
+      "use_valuenorm": true,
+      "use_proper_time_limits": true,
+      "sample_mean_advantage_tf": true,
+      "async_tf": true,
+      "early_stop": 30
+    }
+  },
+  "algo_mechanism_args": {
+    "algo": {
+      "alpha": 0.001,
+      "alpha_lr": 0.0003,
+      "auto_alpha": false,
+      "batch_size": 10000,
+      "buffer_size": 1000000,
+      "expl_noise": 0.1,
+      "fixed_order": false,
+      "gamma": 0.99,
+      "n_step": 3,
+      "polyak": 0.005,
+      "share_param": false,
+      "huber_delta": 10.0,
+      "use_huber_loss": false,
+      "use_policy_active_masks": true
+    },
+    "device": {
+      "cuda": true,
+      "cuda_deterministic": true,
+      "torch_threads": 10
+    },
+    "eval": {
+      "eval_episodes": 40,
+      "n_eval_rollout_threads": 20,
+      "use_eval": true
+    },
+    "logger": {
+      "log_dir": "./results"
+    },
+    "model": {
+      "activation_func": "relu",
+      "critic_lr": 0.001,
+      "final_activation_func": "tanh",
+      "hidden_sizes": [
+        64,
+        64
+      ],
+      "lr": 0.0005
+    },
+    "render": {
+      "render_episodes": 10,
+      "use_render": false
+    },
+    "seed": {
+      "seed": 1,
+      "seed_specify": true
+    },
+    "train": {
+      "__comment__": "\u6ce8\u610f\u8fd9\u91cc\u7684num_env_steps\u548cn_rollout_threads\u8981\u548calgo_args\u91cc\u7684\u4e00\u81f4",
+      "eval_interval": 10000,
+      "log_interval": null,
+      "model_dir": null,
+      "n_rollout_threads": 100,
+      "num_env_steps": 150000000,
+      "train_interval": 50,
+      "update_per_train": 0.1,
+      "use_linear_lr_decay": false,
+      "use_fragment_lr_decay": true,
+      "use_proper_time_limits": true,
+      "warmup_for_mechanism_tf": true,
+      "warmup_steps": 10000,
+      "use_valuenorm": true
+    }
+  },
+  "env_args": {
+    "num_agents": 18,
+    "LT_generators": [
+      {
+        "gen_func": "poisson",
+        "gen_args": {
+          "mean": 2,
+          "max_num": 6
+        }
+      }
+    ],
+    "demand_generators": {
+      "gen_func": "shanshu",
+      "gen_args": {
+        "SKU_id": "SKU023"
+      }
+    },
+    "shipping_loss_generators": {
+      "gen_func": "constant",
+      "gen_args": {
+        "value": 0
+      }
+    },
+    "backlog_tf": true,
+    "H": 0.1,
+    "B": 1.0,
+    "P": 0,
+    "C": 0,
+    "K": 0,
+    "shipping_cost_per_distance": 0.0002,
+    "distance_matrix_index": 1,
+    "reactive_tf": false,
+    "transship_type": "pure_autonomy",
+    "mechanism_agent_type": "pricing",
+    "product_allocation_method": {
+      "allocate_func": "least_distance"
+    },
+    "revenue_allocation_method": "constant",
+    "constant_transshipment_price": 0.2,
+    "self_interest_rate": 1.0,
+    "payment_type": "selling_first",
+    "reward_type": "profit",
+    "reward_scale_tf": true,
+    "state_normalize": true,
+    "state_clip_list": [
+      -5,
+      5
+    ],
+    "actor_obs_type": "self",
+    "critic_obs_type": "self",
+    "demand_info_for_critic": [
+      "long_std",
+      "long_mean"
+    ],
+    "inventory_est_for_critic_tf": true,
+    "inventory_est_others_for_critic_tf": true,
+    "inventory_est_horizon": 2,
+    "MOQ": 20,
+    "average_frequency": 1,
+    "action_type": "multi_discrete",
+    "order_step_size": 0.1,
+    "transship_step_size": 0.05,
+    "order_ub": 3,
+    "transship_lb": -1,
+    "transship_ub": 1.5,
+    "estimate_demand_method": "ema",
+    "rolling_window": 10,
+    "alpha": 0.2,
+    "gamma": 0.95,
+    "episode_length": 50,
+    "num_envs": 100,
+    "dataset_name": "SKU023",
+    "advantage_split_mode": "lt_today",
+    "advantage_fixed_lt": 0,
+    "advantage_split_max_horizon": 100,
+    "price_agent_feature_mode": null,
+    "include_price_signal_in_obs": false,
+    "actor_obs_type_mechanism": "full",
+    "critic_obs_type_mechanism": "full",
+    "mechanism_reward_mode": "avg_reward",
+    "scenario": "default",
+    "eppen_use_demand_correlation": true,
+    "eval_dataset_mode": "all"
+  },
+  "main_args": {
+    "algo": "happo",
+    "env": "multi_lt_transship",
+    "exp_name": "beverage_SKU023",
+    "load_config": "",
+    "algo_mechanism": "hasac",
+    "write_tensorboard_tf": false
+  }
+}

@@ -1,0 +1,2 @@
+recursive-include harl *.yaml *.csv *.txt
+recursive-include configs *.json
